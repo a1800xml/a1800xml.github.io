@@ -55,7 +55,7 @@ function fetchStore(file, parentTag) {
 
 async function perfSearch({ searchString, searchTag, parentTag, nonstrict }) {
 	console.error(searchString, searchTag, parentTag, nonstrict);
-	let indDB = await searchDB(parentTag, searchString, nonstrict, searchTag);
+	let indDB = await searchDB(parentTag, searchString, nonstrict);
 }
 
 /* main entry for Search */

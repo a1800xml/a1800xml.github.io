@@ -70,54 +70,85 @@ dbRequest.onsuccess = function (event) {
 /**
  * Functions
  * **/
-
-function searchDB(parentTag, searchString, nonstrict, searchTag) {
+function searchDB(parentTag, searchString, nonstrict = false, searchTag = ["GUID", "Template", "Name"]) {
 	return new Promise((resolve, reject) => {
 		const request = indexedDB.open(dbName);
 
 		request.onerror = event => {
-			reject(`Error opening database: ${event.target.errorCode}`);
+			reject("Database error: " + event.target.errorCode);
 		};
 
 		request.onsuccess = event => {
 			const db = event.target.result;
-			const transaction = db.transaction([parentTag], "readonly");
-			const objectStore = transaction.objectStore(parentTag);
-
-			// Use openCursor to iterate over all entries
-			const cursorRequest = objectStore.openCursor();
+			const transaction = db.transaction(parentTag, "readonly");
+			const store = transaction.objectStore(parentTag);
 			const results = [];
 
-			cursorRequest.onsuccess = event => {
-				const cursor = event.target.result;
-				if (cursor) {
-					const record = cursor.value;
-					console.warn("cursor", record.GUID, record.Template, record.Name);
-					if (nonstrict) {
-						//on
-					} else {
-						//off
+			const checkMatch = (value, searchString) => {
+				console.log(value.toString().includes(searchString), value.toString(), searchString);
+				return nonstrict ? value.toString().includes(searchString) : value.toString() === searchString;
+			};
+
+			const processRecord = (record, searchTag) => {
+				// If the searchTag contains additional fields, check those fields in the record
+				for (let tag of searchTag) {
+					if (record[tag] && checkMatch(record[tag], searchString)) {
+						results.push(record);
+						break; // Stop further checks once a match is found
 					}
-
-					// Assuming the record structure contains GUID, Template, and Name
-					const GUID = record.GUID;
-					const Template = record.Template;
-					const Name = record.Name;
-
-					// Push an array of [GUID, Template, Name] to results
-					results.push([GUID, Template, Name]);
-
-					// Continue to the next record
-					/* cursor.continue(); */
-				} else {
-					// All entries have been processed
-					resolve(results);
 				}
 			};
 
-			cursorRequest.onerror = function (event) {
-				reject(`Error retrieving entries: ${event.target.errorCode}`);
+			const searchIndex = indexName => {
+				return new Promise(resolve => {
+					const index = store.index(indexName);
+					const cursorRequest = index.openCursor();
+
+					cursorRequest.onsuccess = event => {
+						const cursor = event.target.result;
+						if (cursor) {
+							if (checkMatch(cursor.key, searchString)) {
+								results.push(cursor.value);
+							}
+							cursor.continue();
+						} else {
+							resolve();
+						}
+					};
+
+					cursorRequest.onerror = () => resolve(); // Continue on error
+				});
 			};
+
+			const searchObjectStore = () => {
+				return new Promise(resolve => {
+					const cursorRequest = store.openCursor();
+
+					cursorRequest.onsuccess = event => {
+						const cursor = event.target.result;
+						if (cursor) {
+							processRecord(cursor.value, searchTag);
+							cursor.continue();
+						} else {
+							resolve();
+						}
+					};
+
+					cursorRequest.onerror = () => resolve(); // Continue on error
+				});
+			};
+
+			// Perform indexed search first
+			Promise.all(searchTag.filter(tag => tag === "GUID" || tag === "Template" || tag === "Name").map(indexName => searchIndex(indexName))).then(
+				() => {
+					// If there are non-indexed fields in searchTag, search the entire object store
+					if (searchTag.some(tag => tag !== "GUID" && tag !== "Template" && tag !== "Name")) {
+						searchObjectStore().then(() => resolve(results));
+					} else {
+						resolve(results);
+					}
+				}
+			);
 		};
 	});
 }
