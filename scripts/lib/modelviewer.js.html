@@ -1,0 +1,32 @@
+<!-- Include the model-viewer library -->
+<script type="module" src="https://unpkg.com/@google/model-viewer/dist/model-viewer.min.js"></script>
+<!-- Include pako for decompression -->
+<script src="https://cdn.jsdelivr.net/npm/pako@2.0.4/dist/pako.min.js"></script>
+
+<!-- Model Viewer with a placeholder src -->
+<model-viewer alt="collier" shadow-intensity="1" tone-mapping="neutral" skybox-image="3d/belfast_sunset_puresky_1k.hdr"
+              camera-controls touch-action="pan-y" id="modelViewer">
+</model-viewer>
+
+<script>
+  async function loadCompressedGLB(url) {
+    // Fetch the compressed .gz file
+    const response = await fetch(url);
+    const compressedArrayBuffer = await response.arrayBuffer();
+
+    // Decompress using pako
+    const decompressed = pako.inflate(new Uint8Array(compressedArrayBuffer));
+
+    // Create a Blob from the decompressed data
+    const blob = new Blob([decompressed], { type: 'model/gltf-binary' });
+
+    // Create a Blob URL
+    const blobUrl = URL.createObjectURL(blob);
+
+    // Set the Blob URL as the src for the <model-viewer> component
+    document.getElementById('modelViewer').setAttribute('src', blobUrl);
+  }
+
+  // Call the function with the path to your .glb.gz file
+  loadCompressedGLB('./3d/collier_lod0.glb.gz');
+</script>

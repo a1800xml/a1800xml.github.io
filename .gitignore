@@ -1,0 +1,8 @@
+quota.html
+
+# xml folder
+
+xml/*
+!xml/*.gz
+!xml/*.mjs
+!xml/*.bat
