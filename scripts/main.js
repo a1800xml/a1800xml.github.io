@@ -4,7 +4,7 @@
 import * as pako from "https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js";
 /* zlib library to unpack */
 
-import { clearObjectStore, DBUnload, searchDB } from "/scripts/lib/dataBase.js";
+import { clearObjectStore, DBUnload, searchFastDB } from "/scripts/lib/dataBase.js";
 /* database modules */
 
 import * as searches from "./lib/iSearches.js";
@@ -42,7 +42,6 @@ function fetchStore(file, parentTag) {
 	WorkerStatus();
 	wXML.onmessage = e => {
 		const _XML = e.data.xmlData; //xml as string
-		console.warn("starting worker");
 		const wX2J = new Worker("/scripts/worker/wX2J.js");
 		wX2J.postMessage({ xmlData: _XML, parentTag });
 		wX2J.onmessage = e => {
@@ -62,7 +61,7 @@ function fetchStore(file, parentTag) {
 
 async function perfSearch({ searchString, searchTag, parentTag, nonstrict }) {
 	console.error(searchString, searchTag, parentTag, nonstrict);
-	let indDB = await searchDB(parentTag, searchString, nonstrict);
+	let indDB = searchFastDB(parentTag, searchString, nonstrict);
 }
 
 /* main entry for Search */
@@ -125,11 +124,11 @@ window.addEventListener("DOMContentLoaded", initialize);
  * Function to update the visibility of an element based on the WorkerCount
  */
 function WorkerStatus() {
-	const statusElement = document.getElementById('loader_div');  // The element to toggle
+	const statusElement = document.getElementById("loader_div"); // The element to toggle
 
 	if (WorkerCount > 0) {
-		statusElement.style.display = 'block';  // Show element (unhide)
+		statusElement.style.display = "block"; // Show element (unhide)
 	} else {
-		statusElement.style.display = 'none';  // Hide element
+		statusElement.style.display = "none"; // Hide element
 	}
 }

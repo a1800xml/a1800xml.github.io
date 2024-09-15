@@ -1,4 +1,4 @@
-export { clearObjectStore, DBUnload, getFromIndexedDB, searchDB };
+export { clearObjectStore, DBUnload, searchFastDB };
 
 /**
  * static declarations
@@ -33,9 +33,20 @@ dbRequest.onupgradeneeded = function (event) {
 		{
 			name: "Asset",
 			keyPath: "Values.Standard.GUID",
-			indexes: [{ name: "Default", keyPath: ["Values.Standard.GUID", "Values.Standard.Name", "Template"] }]
+			indexes: [
+				{ name: "GUID", keyPath: "Values.Standard.GUID" },
+				{ name: "Name", keyPath: "Values.Standard.Name" },
+				{ name: "Template", keyPath: "Template" }
+			]
 		},
-		{ name: "Text", keyPath: "GUID", indexes: [{ name: "Default", keyPath: ["GUID", "Text"] }] },
+		{
+			name: "Text",
+			keyPath: "GUID",
+			indexes: [
+				{ name: "Text", keyPath: "Text" },
+				{ name: "GUID", keyPath: "GUID" }
+			]
+		},
 		{ name: "Dataset", keyPath: "ID" },
 		{ name: "Template", keyPath: "Name" }
 	];
@@ -66,8 +77,8 @@ dbRequest.onsuccess = function (event) {
 /**
  * Functions
  * **/
-function searchDB(parentTag, searchString, nonstrict = false, searchTag = "") {
-	isNaN(Number(searchString)) ? null : (searchString = Number(searchString));
+function searchFastDB(parentTag, searchString, nonstrict = false) {
+	/* isNaN(Number(searchString)) ? null : (searchString = Number(searchString)); */
 	return new Promise((resolve, reject) => {
 		const request = indexedDB.open(dbName);
 
@@ -76,90 +87,47 @@ function searchDB(parentTag, searchString, nonstrict = false, searchTag = "") {
 		};
 
 		request.onsuccess = event => {
-			const db = event.target.result;
-			const kCursor = db.transaction(parentTag, "readonly").objectStore(parentTag).index("Default").openKeyCursor();
 			const result = [];
-			kCursor.onsuccess = event => {
-				var cursor = event.target.result;
-				if (cursor) {
-					/* console.log(cursor.key.includes(searchString), cursor.key, searchString, typeof searchString); */
-					cursor.key.includes(searchString) ? result.push(cursor.key) : null;
-					cursor.continue();
-				} else {
-					console.log(result);
-				}
-			};
+			const db = event.target.result;
+			const _db = db.transaction(parentTag, "readonly").objectStore(parentTag);
+			const promises = [];
 
-			kCursor.onerror = function () {
-				console.error("Error retrieving keys:");
-			};
-			/* const results = []; */
-			/* 
-			const checkMatch = (value, searchString) => {
-				console.log(value.toString().includes(searchString), value.toString(), searchString);
-				return nonstrict ? value.toString().includes(searchString) : value.toString() === searchString;
-			};
-
-			const processRecord = (record, searchTag) => {
-				// If the searchTag contains additional fields, check those fields in the record
-				for (let tag of searchTag) {
-					if (record[tag] && checkMatch(record[tag], searchString)) {
-						results.push(record);
-						break; // Stop further checks once a match is found
-					}
-				}
-			};
-
-			const searchIndex = indexName => {
-				return new Promise(resolve => {
-					const index = store.index(indexName);
-					const cursorRequest = index.openCursor();
+			// Loop through all indexes and open cursors
+			Array.from(_db.indexNames).forEach(indexName => {
+				const promise = new Promise((resolveCursor, rejectCursor) => {
+					const cursorRequest = _db.index(indexName).openKeyCursor();
 
 					cursorRequest.onsuccess = event => {
-						const cursor = event.target.result;
-						if (cursor) {
-							if (checkMatch(cursor.key, searchString)) {
-								results.push(cursor.value);
+						let pointer = event.target.result;
+
+						if (pointer) {
+							const keyStr = pointer.key.toString().toLowerCase();
+							const searchStr = searchString.toLowerCase();
+
+							if (nonstrict ? keyStr.includes(searchStr) : keyStr === searchStr) {
+								result.push(pointer.primaryKey);
 							}
-							cursor.continue();
+							pointer.continue();
 						} else {
-							resolve();
+							resolveCursor();
 						}
 					};
 
-					cursorRequest.onerror = () => resolve(); // Continue on error
+					cursorRequest.onerror = event => rejectCursor(event.target.error);
 				});
-			};
 
-			const searchObjectStore = () => {
-				return new Promise(resolve => {
-					const cursorRequest = store.openCursor();
+				promises.push(promise);
+			});
 
-					cursorRequest.onsuccess = event => {
-						const cursor = event.target.result;
-						if (cursor) {
-							processRecord(cursor.value, searchTag);
-							cursor.continue();
-						} else {
-							resolve();
-						}
-					};
-
-					cursorRequest.onerror = () => resolve(); // Continue on error
+			// Wait for all cursor operations to finish
+			Promise.all(promises)
+				.then(() => {
+					console.log(result); // array of GUID
+					resolve(result); // Resolve the final result array
+				})
+				.catch(error => {
+					reject(error);
 				});
-			};
-
-			// Perform indexed search first
-			Promise.all(searchTag.filter(tag => tag === "GUID" || tag === "Template" || tag === "Name").map(indexName => searchIndex(indexName))).then(
-				() => {
-					// If there are non-indexed fields in searchTag, search the entire object store
-					if (searchTag.some(tag => tag !== "GUID" && tag !== "Template" && tag !== "Name")) {
-						searchObjectStore().then(() => resolve(results));
-					} else {
-						resolve(results);
-					}
-				}
-			);*/
 		};
 	});
 }
