@@ -43,7 +43,7 @@ dbRequest.onupgradeneeded = function (event) {
 			name: "Text",
 			keyPath: "GUID",
 			indexes: [
-				{ name: "Text", keyPath: "Text" },
+				{ name: "Name", keyPath: "Text" },
 				{ name: "GUID", keyPath: "GUID" }
 			]
 		},
@@ -76,6 +76,13 @@ dbRequest.onsuccess = function (event) {
 
 /**
  * Functions
+ * **/
+
+/**
+ * @param {string} parentTag the parentTag of the search, defines also the objectstore that is searched e.g. "Asset"
+ * @param {string} searchString the string to search e.g. "human7"
+ * @param {boolean} [nonstrict=false] absent if unused
+ * @returns Array of Arrays with Table [GUID, Name]
  * **/
 function searchFastDB(parentTag, searchString, nonstrict = false) {
 	/* isNaN(Number(searchString)) ? null : (searchString = Number(searchString)); */
@@ -123,7 +130,8 @@ function searchFastDB(parentTag, searchString, nonstrict = false) {
 			Promise.all(promises)
 				.then(() => {
 					console.log(result); // array of GUID
-					resolve(result); // Resolve the final result array
+					const aResult = getIndexKeyForGUIDs(parentTag, result, "Name");
+					resolve(aResult); // Resolve the final result array
 				})
 				.catch(error => {
 					reject(error);
@@ -132,56 +140,62 @@ function searchFastDB(parentTag, searchString, nonstrict = false) {
 	});
 }
 
-// Retrieve data from IndexedDB
-function getFromIndexedDB(DBName, searchValue) {
+/**
+ *
+ *
+ * **/
+function getIndexKeyForGUIDs(parentTag, resultArray, indexName) {
 	return new Promise((resolve, reject) => {
 		const request = indexedDB.open(dbName);
 
-		request.onerror = function (event) {
-			reject(`Error opening database: ${event.target.errorCode}`);
+		request.onerror = event => {
+			reject("Database error: " + event.target.errorCode);
 		};
 
-		request.onsuccess = function (event) {
+		request.onsuccess = event => {
 			const db = event.target.result;
-			const transaction = db.transaction([DBName], "readonly");
-			const objectStore = transaction.objectStore(DBName);
+			const _db = db.transaction(parentTag, "readonly").objectStore(parentTag);
+			const finalResult = [];
 
-			// Get all index names
-			const indexNames = objectStore.indexNames;
-			const results = [];
+			// Create promises for each GUID to fetch the corresponding index key
+			new Promise((resolveCursor, rejectCursor) => {
+				const cursorRequest = _db.index(indexName).openKeyCursor();
+				let resultArray = []; // The array that holds the result
 
-			// Array to store search promises
-			const searchPromises = [];
+				cursorRequest.onsuccess = event => {
+					let pointer = event.target.result;
 
-			// Iterate over all indexes
-			for (let i = 0; i < indexNames.length; i++) {
-				const indexName = indexNames[i];
-				const index = objectStore.index(indexName);
+					if (pointer) {
+						const primaryKey = pointer.primaryKey;
+						const key = pointer.key;
 
-				// Create a promise for each index search
-				const searchPromise = new Promise((resolveIndex, rejectIndex) => {
-					const request = index.getAll(searchValue);
+						// Check if the primaryKey already exists in the array
+						let found = resultArray.find(item => item.primaryKey === primaryKey);
 
-					request.onsuccess = function (event) {
-						const indexResults = event.target.result;
-						if (indexResults.length > 0) {
-							results.push({ indexName, records: indexResults });
+						if (found) {
+							// If primaryKey exists, push an array of primaryKey and key
+							found.value = [primaryKey, key];
+						} else {
+							// Otherwise, add a new object with primaryKey and key
+							resultArray.push({ primaryKey: primaryKey, value: key });
 						}
-						resolveIndex();
-					};
 
-					request.onerror = function (event) {
-						rejectIndex(`Error searching index ${indexName}: ${event.target.errorCode}`);
-					};
+						pointer.continue();
+					} else {
+						resolveCursor(resultArray); // Resolve with the final array
+					}
+				};
+
+				cursorRequest.onerror = event => rejectCursor(event.target.error);
+			});
+
+			Promise.all(promises)
+				.then(results => {
+					resolve(results); // Array of [GUID, indexKey or ""]
+				})
+				.catch(error => {
+					reject(error);
 				});
-
-				searchPromises.push(searchPromise);
-			}
-
-			// Wait for all index searches to complete
-			Promise.all(searchPromises)
-				.then(() => resolve(results))
-				.catch(error => reject(error));
 		};
 	});
 }
