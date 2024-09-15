@@ -33,12 +33,9 @@ dbRequest.onupgradeneeded = function (event) {
 		{
 			name: "Asset",
 			keyPath: "Values.Standard.GUID",
-			indexes: [
-				{ name: "Name", keyPath: "Values.Standard.Name" },
-				{ name: "Template", keyPath: "Template" }
-			]
+			indexes: [{ name: "Default", keyPath: ["Values.Standard.GUID", "Values.Standard.Name", "Template"] }]
 		},
-		{ name: "Text", keyPath: "GUID", indexes: [{ name: "Text", keyPath: "Text" }] },
+		{ name: "Text", keyPath: "GUID", indexes: [{ name: "Default", keyPath: ["GUID", "Text"] }] },
 		{ name: "Dataset", keyPath: "ID" },
 		{ name: "Template", keyPath: "Name" }
 	];
@@ -49,7 +46,6 @@ dbRequest.onupgradeneeded = function (event) {
 
 			// Create indexes for the current object store
 			if (config.indexes) {
-				console.warn(config.indexes);
 				config.indexes.forEach(index => {
 					objectStore.createIndex(index.name, index.keyPath, { unique: false });
 				});
@@ -70,7 +66,8 @@ dbRequest.onsuccess = function (event) {
 /**
  * Functions
  * **/
-function searchDB(parentTag, searchString, nonstrict = false, searchTag = ["GUID", "Template", "Name"]) {
+function searchDB(parentTag, searchString, nonstrict = false, searchTag = "") {
+	isNaN(Number(searchString)) ? null : (searchString = Number(searchString));
 	return new Promise((resolve, reject) => {
 		const request = indexedDB.open(dbName);
 
@@ -80,10 +77,24 @@ function searchDB(parentTag, searchString, nonstrict = false, searchTag = ["GUID
 
 		request.onsuccess = event => {
 			const db = event.target.result;
-			const transaction = db.transaction(parentTag, "readonly");
-			const store = transaction.objectStore(parentTag);
-			const results = [];
+			const kCursor = db.transaction(parentTag, "readonly").objectStore(parentTag).index("Default").openKeyCursor();
+			const result = [];
+			kCursor.onsuccess = event => {
+				var cursor = event.target.result;
+				if (cursor) {
+					/* console.log(cursor.key.includes(searchString), cursor.key, searchString, typeof searchString); */
+					cursor.key.includes(searchString) ? result.push(cursor.key) : null;
+					cursor.continue();
+				} else {
+					console.log(result);
+				}
+			};
 
+			kCursor.onerror = function () {
+				console.error("Error retrieving keys:");
+			};
+			/* const results = []; */
+			/* 
 			const checkMatch = (value, searchString) => {
 				console.log(value.toString().includes(searchString), value.toString(), searchString);
 				return nonstrict ? value.toString().includes(searchString) : value.toString() === searchString;
@@ -148,7 +159,7 @@ function searchDB(parentTag, searchString, nonstrict = false, searchTag = ["GUID
 						resolve(results);
 					}
 				}
-			);
+			);*/
 		};
 	});
 }

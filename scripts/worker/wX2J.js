@@ -12,7 +12,6 @@ onmessage = async function (event) {
 		parseAttributeValue: true,
 		trimValues: true
 	};
-	console.log("am at xml");
 	const { xmlData, parentTag } = event.data;
 	const parser = new fxp.XMLParser(pOptions);
 	let parsedXML = await parser.parse(xmlData);
@@ -22,5 +21,3 @@ onmessage = async function (event) {
 		status: "success"
 	});
 };
-
-console.log("in wx2j");

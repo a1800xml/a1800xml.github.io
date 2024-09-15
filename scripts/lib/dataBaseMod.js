@@ -5,7 +5,7 @@
 const dbName = "a1800XML";
 const dbVersion = 182;
 
-let dbRequest = indexedDB.open(dbName, dbVersion);
+/* let dbRequest = indexedDB.open(dbName, dbVersion); */
 
 /**
  * dbRequest callback functions
@@ -15,15 +15,15 @@ let dbRequest = indexedDB.open(dbName, dbVersion);
  * event from callback
  * error handler
  * **/
-dbRequest.onerror = event => {
+/* dbRequest.onerror = event => {
 	console.error(`Database error: ${event.target.error?.message}`);
-};
+}; */
 
 /**
  * event from callback
  * setup & upgrade handler
  * **/
-dbRequest.onupgradeneeded = function (event) {
+/* dbRequest.onupgradeneeded = function (event) {
 	const db = event.target.result;
 
 	// Object store configuration
@@ -54,16 +54,16 @@ dbRequest.onupgradeneeded = function (event) {
 			}
 		}
 	});
-};
+}; */
 
 /**
  *
  *
  * **/
-dbRequest.onsuccess = function (event) {
+/* dbRequest.onsuccess = function (event) {
 	const db = event.target.result;
 	console.log("Database opened successfully");
-};
+}; */
 
 /**
  * Functions
@@ -74,7 +74,6 @@ dbRequest.onsuccess = function (event) {
  * @param {Object} Data
  * **/
 function storeInIndexedDB(DBIndex, Data) {
-	console.log("trying to store");
 	indexedDB.open(dbName, dbVersion).onsuccess = event => {
 		const transaction = event.target.result.transaction([DBIndex], "readwrite");
 		const objectStore = transaction.objectStore(DBIndex);
@@ -83,13 +82,14 @@ function storeInIndexedDB(DBIndex, Data) {
 			Array.isArray(item) ? item.forEach(e => objectStore.add(e)) : typeof item === "object" && item !== null ? objectStore.add(item) : null;
 		});
 		transaction.oncomplete = function () {
-			console.log("All results stored in IndexedDB");
+			console.log(DBIndex, "All results stored in IndexedDB");
 		};
+		event.target.result.close();
 	};
 }
 
 // Retrieve data from IndexedDB
-function getFromIndexedDB(DBName, SearchValue) {
+/* function getFromIndexedDB(DBName, SearchValue) {
 	const request = indexedDB.open(dbName);
 	request.onsuccess = function (event) {
 		const db = event.target.result;
@@ -127,3 +127,4 @@ async function clearObjectStore(storeName) {
 		};
 	});
 }
+ */

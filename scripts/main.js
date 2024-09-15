@@ -30,6 +30,7 @@ async function checkDB(storeName) {
 	});
 }
 
+let WorkerCount = 0;
 /**
  * @param {string} file
  * @param {string} parentTag
@@ -37,11 +38,17 @@ async function checkDB(storeName) {
 function fetchStore(file, parentTag) {
 	const wXML = new Worker("scripts/worker/wFetch.js");
 	wXML.postMessage({ filePath: "/xml/" + file });
+	WorkerCount += 1;
+	WorkerStatus();
 	wXML.onmessage = e => {
 		const _XML = e.data.xmlData; //xml as string
 		console.warn("starting worker");
 		const wX2J = new Worker("/scripts/worker/wX2J.js");
 		wX2J.postMessage({ xmlData: _XML, parentTag });
+		wX2J.onmessage = e => {
+			WorkerCount -= 1;
+			WorkerStatus();
+		};
 	};
 }
 
@@ -113,3 +120,16 @@ function handleSelectionChange(value) {
 
 // Run initialization when the DOM is fully loaded
 window.addEventListener("DOMContentLoaded", initialize);
+
+/**
+ * Function to update the visibility of an element based on the WorkerCount
+ */
+function WorkerStatus() {
+	const statusElement = document.getElementById('loader_div');  // The element to toggle
+
+	if (WorkerCount > 0) {
+		statusElement.style.display = 'block';  // Show element (unhide)
+	} else {
+		statusElement.style.display = 'none';  // Hide element
+	}
+}
