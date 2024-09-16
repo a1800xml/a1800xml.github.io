@@ -1,4 +1,4 @@
-export { clearObjectStore, DBUnload, searchFastDB };
+export { clearObjectStore, DBUnload, searchFastDB, getValueDB };
 
 /**
  * static declarations
@@ -129,8 +129,8 @@ function searchFastDB(parentTag, searchString, nonstrict = false) {
 			// Wait for all cursor operations to finish
 			Promise.all(promises)
 				.then(() => {
-					console.log(result); // array of GUID
-					const aResult = getIndexKeyForGUIDs(parentTag, result, "Name");
+					/* console.log(result); // array of GUID */
+					const aResult = getNameToGUID(parentTag, result);
 					resolve(aResult); // Resolve the final result array
 				})
 				.catch(error => {
@@ -141,13 +141,13 @@ function searchFastDB(parentTag, searchString, nonstrict = false) {
 }
 
 /**
- *
- *
+ * @param {string} parentTag
+ * @param {Number[]} GUIDArray
  * **/
-function getIndexKeyForGUIDs(parentTag, resultArray, indexName) {
+function getNameToGUID(parentTag, GUIDArray) {
 	return new Promise((resolve, reject) => {
 		const request = indexedDB.open(dbName);
-
+		/* console.warn("getNameToGUID"); */
 		request.onerror = event => {
 			reject("Database error: " + event.target.errorCode);
 		};
@@ -155,29 +155,22 @@ function getIndexKeyForGUIDs(parentTag, resultArray, indexName) {
 		request.onsuccess = event => {
 			const db = event.target.result;
 			const _db = db.transaction(parentTag, "readonly").objectStore(parentTag);
-			const finalResult = [];
 
-			// Create promises for each GUID to fetch the corresponding index key
-			new Promise((resolveCursor, rejectCursor) => {
-				const cursorRequest = _db.index(indexName).openKeyCursor();
-				let resultArray = []; // The array that holds the result
+			const promise = new Promise((resolveCursor, rejectCursor) => {
+				const cursorRequest = _db.index("Name").openKeyCursor();
+				let resultArray = [];
 
 				cursorRequest.onsuccess = event => {
 					let pointer = event.target.result;
 
 					if (pointer) {
-						const primaryKey = pointer.primaryKey;
-						const key = pointer.key;
-
 						// Check if the primaryKey already exists in the array
-						let found = resultArray.find(item => item.primaryKey === primaryKey);
-
-						if (found) {
-							// If primaryKey exists, push an array of primaryKey and key
-							found.value = [primaryKey, key];
-						} else {
-							// Otherwise, add a new object with primaryKey and key
-							resultArray.push({ primaryKey: primaryKey, value: key });
+						const _i = GUIDArray.indexOf(pointer.primaryKey);
+						if (_i > -1) {
+							resultArray.push({ primaryKey: pointer.primaryKey, value: pointer.key });
+							//remove found item from GUIDArray
+							GUIDArray.splice(_i, 1);
+							/* console.log(GUIDArray); */
 						}
 
 						pointer.continue();
@@ -189,9 +182,9 @@ function getIndexKeyForGUIDs(parentTag, resultArray, indexName) {
 				cursorRequest.onerror = event => rejectCursor(event.target.error);
 			});
 
-			Promise.all(promises)
-				.then(results => {
-					resolve(results); // Array of [GUID, indexKey or ""]
+			Promise.all([promise])
+				.then(resultArray => {
+					resolve(resultArray); // Array of [GUID, indexKey or ""]
 				})
 				.catch(error => {
 					reject(error);
@@ -229,4 +222,31 @@ async function clearObjectStore(storeName) {
 			};
 		});
 	};
+}
+
+// Retrieve data from IndexedDB
+function getValueDB(DBName, SearchValue) {
+	return new Promise((resolve, reject) => {
+		const request = indexedDB.open(dbName);
+
+		request.onsuccess = () => {
+			const db = request.result;
+			const transaction = db.transaction(DBName, "readonly");
+			const objectStore = transaction.objectStore(DBName);
+			const getRequest = objectStore.get(Number(SearchValue));
+
+			getRequest.onsuccess = () => {
+				const value = getRequest.result;
+				resolve(value);
+			};
+
+			getRequest.onerror = err => {
+				reject(`Error getting data from object store: ${err}`);
+			};
+		};
+
+		request.onerror = err => {
+			reject(`Error opening database: ${err}`);
+		};
+	});
 }

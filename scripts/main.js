@@ -4,10 +4,79 @@
 import * as pako from "https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js";
 /* zlib library to unpack */
 
-import { clearObjectStore, DBUnload, searchFastDB } from "/scripts/lib/dataBase.js";
+import { clearObjectStore, DBUnload, searchFastDB, getValueDB } from "/scripts/lib/dataBase.js";
 /* database modules */
 
 import * as searches from "./lib/iSearches.js";
+
+/**
+ * @param {Array[primaryKey, value]} results
+ * **/
+function displayResultList(DBName, results) {
+	/* get ResultsListTarget */
+	const resultsList = document.getElementById("result_list_target");
+	/* empty */
+	resultsList.innerHTML = "";
+	/* process each element */
+	const divList = [];
+	results[0].forEach(ele => {
+		// why Array of Array?!
+		/* feed list with items in GUID */
+		divList[ele.primaryKey] = document.createElement("div");
+		divList[ele.primaryKey].className = "result_list_row";
+
+		const [resDivGUID, resDivShort, resDivLnk] = ["div", "div", "div"].map(tag => document.createElement(tag));
+
+		resDivGUID.textContent = ele.primaryKey;
+		resDivShort.textContent = ele.value;
+		resDivLnk.className = "material-symbols-outlined btn";
+		resDivLnk.dataset.guid = ele.primaryKey;
+		resDivLnk.textContent = "arrow_outward";
+		[resDivGUID, resDivShort, resDivLnk].forEach(item => {
+			divList[ele.primaryKey].appendChild(item);
+		});
+	});
+	divList.forEach(ele => {
+		resultsList.appendChild(ele);
+	});
+	/* console.log("indb", results); */
+	resultsList.addEventListener("click", function (event) {
+		// Check if the clicked element has the class 'btn'
+		if (event.target && event.target.classList.contains("btn")) {
+			const GUID = event.target.dataset.guid;
+			GUIDtoDisplay(DBName, GUID);
+		}
+	});
+}
+
+function displayHead(Data) {
+	console.log("Head")
+}
+
+function displayData(Data) {
+	const display = document.getElementById("details_values_DATA");
+	console.log("data",Data)
+	display.innerHTML = JSON.stringify(Data);
+}
+
+function displayXML(Data) {
+	const display = document.getElementById("details_values_XML");
+	console.log("xml",Data)
+	display.innerHTML = Data;
+}
+
+function display3D(Data) {
+	console.log("3d")
+}
+
+/**
+ *
+ * **/
+async function GUIDtoDisplay(DBName, GUID) {
+	const value = await getValueDB(DBName, GUID);
+	displayData(value);
+	displayXML(value);
+}
 
 /**
  * @param {string} storeName
@@ -62,7 +131,7 @@ function fetchStore(file, parentTag) {
 async function perfSearch({ searchString, searchTag, parentTag, nonstrict }) {
 	console.error(searchString, searchTag, parentTag, nonstrict);
 	let indDB = await searchFastDB(parentTag, searchString, nonstrict);
-	console.log("perfsearch", indDB);
+	displayResultList(parentTag, indDB);
 }
 
 /* main entry for Search */

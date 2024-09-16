@@ -88,21 +88,7 @@ function storeInIndexedDB(DBIndex, Data) {
 	};
 }
 
-// Retrieve data from IndexedDB
-/* function getFromIndexedDB(DBName, SearchValue) {
-	const request = indexedDB.open(dbName);
-	request.onsuccess = function (event) {
-		const db = event.target.result;
-		const transaction = db.transaction([DBName], "readonly");
-		const objectStore = transaction.objectStore(DBName);
-
-		const getRequest = objectStore.get(SearchValue);
-		console.log(getRequest);
-		getRequest.onsuccess = function () {
-			callback(getRequest.result); // Pass the result to a callback function
-		};
-	};
-}
+/*
 
 function DBUnload() {
 	const request = indexedDB.deleteDatabase(dbName);
