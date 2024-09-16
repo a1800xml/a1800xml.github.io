@@ -357,6 +357,19 @@ display: flex;;
   text-align: right;
 }
 
+#details_values_DATA div {
+  display: flex;
+  justify-content: space-between;
+}
+#details_values_DATA > div:nth-child(even) {
+  background-color: var(--bg-color-details-table-row);
+}
+#details_values_DATA div div:nth-child(1){
+}
+#details_values_DATA div div:nth-child(2){
+  text-align: right;
+}
+
 
 #detail_xml textarea {
   width: 100%;

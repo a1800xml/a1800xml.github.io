@@ -1,13 +1,9 @@
 /* 
 	 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>	 
 	 */
-import * as pako from "https://cdnjs.cloudflare.com/ajax/libs/pako/2.0.4/pako.min.js";
-/* zlib library to unpack */
 
 import { clearObjectStore, DBUnload, searchFastDB, getValueDB } from "/scripts/lib/dataBase.js";
 /* database modules */
-
-import * as searches from "./lib/iSearches.js";
 
 /**
  * @param {Array[primaryKey, value]} results
@@ -49,24 +45,24 @@ function displayResultList(DBName, results) {
 	});
 }
 
-function displayHead(Data) {
-	console.log("Head")
-}
-
-function displayData(Data) {
-	const display = document.getElementById("details_values_DATA");
-	console.log("data",Data)
-	display.innerHTML = JSON.stringify(Data);
-}
-
-function displayXML(Data) {
-	const display = document.getElementById("details_values_XML");
-	console.log("xml",Data)
-	display.innerHTML = Data;
-}
-
-function display3D(Data) {
-	console.log("3d")
+function displayRes(resArray) {
+	const dID = document.getElementById("details_values_DATA");
+	dID.innerHTML = "";
+	resArray["Data"].forEach(e => {
+		const div = document.createElement("div");
+		e.forEach(ele => {
+			const divs = document.createElement("div");
+			divs.innerHTML = ele;
+			div.appendChild(divs);
+		});
+		dID.appendChild(div);
+	});
+	const dIDX = document.getElementById("details_values_XML");
+	dIDX.innerHTML = resArray["XML"]
+		.replaceAll("&", "&amp;")
+		.replaceAll("<", "&lt;")
+		.replaceAll(">", "&gt;")
+		.replaceAll("\n", "<br>");
 }
 
 /**
@@ -74,8 +70,11 @@ function display3D(Data) {
  * **/
 async function GUIDtoDisplay(DBName, GUID) {
 	const value = await getValueDB(DBName, GUID);
-	displayData(value);
-	displayXML(value);
+	const wXML = new Worker("scripts/worker/wJ2S.js");
+	wXML.postMessage(value);
+	wXML.onmessage = e => {
+		displayRes(e.data);
+	};
 }
 
 /**
