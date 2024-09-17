@@ -16,7 +16,7 @@ onmessage = async function (event) {
 	const parser = new fxp.XMLParser(pOptions);
 	let parsedXML = await parser.parse(xmlData);
 	const result = jsonpath.query(parsedXML, "$.." + parentTag);
-	storeInIndexedDB(parentTag, result);
+	await storeInIndexedDB(parentTag, result);
 	postMessage({
 		status: "success"
 	});

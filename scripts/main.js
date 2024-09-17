@@ -58,11 +58,7 @@ function displayRes(resArray) {
 		dID.appendChild(div);
 	});
 	const dIDX = document.getElementById("details_values_XML");
-	dIDX.innerHTML = resArray["XML"]
-		.replaceAll("&", "&amp;")
-		.replaceAll("<", "&lt;")
-		.replaceAll(">", "&gt;")
-		.replaceAll("\n", "<br>");
+	dIDX.innerHTML = resArray["XML"].replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\n", "<br>");
 }
 
 /**
@@ -128,9 +124,13 @@ function fetchStore(file, parentTag) {
  * **/
 
 async function perfSearch({ searchString, searchTag, parentTag, nonstrict }) {
+	WorkerCount += 1;
+	WorkerStatus();
 	console.error(searchString, searchTag, parentTag, nonstrict);
 	let indDB = await searchFastDB(parentTag, searchString, nonstrict);
 	displayResultList(parentTag, indDB);
+	WorkerCount -= 1;
+	WorkerStatus();
 }
 
 /* main entry for Search */
@@ -162,6 +162,7 @@ window.addEventListener("DOMContentLoaded", function () {
  * delete all databases to clean up space after unloading the webpage e.g. closing
  * **/
 window.addEventListener("beforeunload", () => {
+	console.warn("Unloading webpage, to free up space, DB will be unloaded!");
 	DBUnload();
 });
 
