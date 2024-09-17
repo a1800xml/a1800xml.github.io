@@ -59,6 +59,9 @@ function displayRes(resArray) {
 	});
 	const dIDX = document.getElementById("details_values_XML");
 	dIDX.innerHTML = resArray["XML"].replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\n", "<br>");
+	document.querySelectorAll("[id=details_name_asset]").forEach(e => (e.innerHTML = resArray["Head"]["Name"]));
+	document.querySelectorAll("[id=details_name_template]").forEach(e => (e.innerHTML = resArray["Head"]["Template"]));
+	document.querySelectorAll("[id=details_icon]").forEach(e => (e.src = "/icos/" + resArray["Head"]["Icon"]));
 }
 
 /**

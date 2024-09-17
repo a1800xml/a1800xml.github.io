@@ -6,11 +6,13 @@ importScripts("/scripts/lib/dataBaseMod.js");
 
 onmessage = async function (event) {
 	const pOptions = {
-		ignoreAttributes: false,
-		allowBooleanAttributes: true,
-		parseNodeValue: true,
-		parseAttributeValue: true,
-		trimValues: true
+		ignoreAttributes: true,
+		//allowBooleanAttributes: true,
+		//parseNodeValue: false,
+		//parseAttributeValue: false, //no attributes in anno
+		trimValues: true,
+		processEntities: false, //default :true
+		ignoreDeclaration: true
 	};
 	const { xmlData, parentTag } = event.data;
 	const parser = new fxp.XMLParser(pOptions);

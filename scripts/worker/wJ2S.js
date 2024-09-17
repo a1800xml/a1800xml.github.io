@@ -10,9 +10,9 @@ importScripts("/scripts/lib/jspath/jsonpath.min.js"); //v1.1.1
  * **/
 function displayHead(Data) {
 	const result = [];
-	result["Icon"] = jsonpath.query(Data, "$..IconFilename");
-	result["Template"] = jsonpath.query(Data, "$..Template");
-	result["Name"] = jsonpath.query(Data, "$..Name") || jsonpath.query(Data, "$..Text");
+	result["Icon"] = jsonpath.value(Data, "$..IconFilename");
+	result["Template"] = jsonpath.value(Data, "$..Template");
+	result["Name"] = jsonpath.value(Data, "$..Name") || jsonpath.query(Data, "$..Text");
 	return result;
 }
 
