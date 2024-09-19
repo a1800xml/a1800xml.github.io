@@ -32,9 +32,12 @@ function displayResultList(DBName, results) {
 			divList[ele.primaryKey].appendChild(item);
 		});
 	});
+	/* creating fragments instead of appending each child to reduce DOM reload */
+	const fragment = document.createDocumentFragment();
 	divList.forEach(ele => {
-		resultsList.appendChild(ele);
+		fragment.appendChild(ele);
 	});
+	resultsList.appendChild(fragment);
 	/* console.log("indb", results); */
 	resultsList.addEventListener("click", function (event) {
 		// Check if the clicked element has the class 'btn'
@@ -47,21 +50,21 @@ function displayResultList(DBName, results) {
 
 function displayRes(resArray) {
 	const dID = document.getElementById("details_values_DATA");
-	dID.innerHTML = "";
+	let dataHTML = "";
 	resArray["Data"].forEach(e => {
-		const div = document.createElement("div");
-		e.forEach(ele => {
-			const divs = document.createElement("div");
-			divs.innerHTML = ele;
-			div.appendChild(divs);
-		});
-		dID.appendChild(div);
+		dataHTML += `<div>${e.map(ele => `<div>${ele}</div>`).join("")}</div>`;
 	});
+	dID.innerHTML = dataHTML;
 	const dIDX = document.getElementById("details_values_XML");
-	dIDX.innerHTML = resArray["XML"].replaceAll("&", "&amp;").replaceAll("<", "&lt;").replaceAll(">", "&gt;").replaceAll("\n", "<br>");
+	dIDX.innerHTML = resArray["XML"].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
 	document.querySelectorAll("[id=details_name_asset]").forEach(e => (e.innerHTML = resArray["Head"]["Name"]));
 	document.querySelectorAll("[id=details_name_template]").forEach(e => (e.innerHTML = resArray["Head"]["Template"]));
-	document.querySelectorAll("[id=details_icon]").forEach(e => (e.src = "/icos/" + resArray["Head"]["Icon"]));
+	resArray["Head"]["Icon"]
+		? document.querySelectorAll("[id=details_icon]").forEach(e => {
+				e.src = "/icos/" + resArray["Head"]["Icon"];
+				e.style.display = "block";
+		  })
+		: document.querySelectorAll("[id=details_icon]").forEach(e => (e.style.display = "none"));
 }
 
 /**
@@ -97,19 +100,22 @@ async function checkDB(storeName) {
 	});
 }
 
-let WorkerCount = 0;
 /**
  * @param {string} file
  * @param {string} parentTag
  * **/
+
+/* const wXML = new Worker("/scripts/worker/wFetch.js"); */
+
 function fetchStore(file, parentTag) {
-	const wXML = new Worker("scripts/worker/wFetch.js");
+	const wXML = new Worker("/scripts/worker/wFetch.js");
+	const wX2J = new Worker("/scripts/worker/wX2J.js");
 	wXML.postMessage({ filePath: "/xml/" + file });
 	WorkerCount += 1;
 	WorkerStatus();
 	wXML.onmessage = e => {
 		const _XML = e.data.xmlData; //xml as string
-		const wX2J = new Worker("/scripts/worker/wX2J.js");
+		/* const wX2J = new Worker("/scripts/worker/wX2J.js"); */
 		wX2J.postMessage({ xmlData: _XML, parentTag });
 		wX2J.onmessage = e => {
 			WorkerCount -= 1;
@@ -129,7 +135,7 @@ function fetchStore(file, parentTag) {
 async function perfSearch({ searchString, searchTag, parentTag, nonstrict }) {
 	WorkerCount += 1;
 	WorkerStatus();
-	console.error(searchString, searchTag, parentTag, nonstrict);
+	/* console.error(searchString, searchTag, parentTag, nonstrict); */
 	let indDB = await searchFastDB(parentTag, searchString, nonstrict);
 	displayResultList(parentTag, indDB);
 	WorkerCount -= 1;
@@ -138,13 +144,7 @@ async function perfSearch({ searchString, searchTag, parentTag, nonstrict }) {
 
 /* main entry for Search */
 window.addEventListener("DOMContentLoaded", function () {
-	var form = document.getElementById("search-form");
-
-	const fileIndex = [{ name: "assets.xml.gz", parentTag: "Asset" }];
-	fileIndex.forEach(ele => {
-		fetchStore(ele.name, ele.parentTag);
-	});
-
+	/* var form = document.getElementById("search-form"); */
 	document.addEventListener(
 		"submit",
 		function (event) {
@@ -154,7 +154,7 @@ window.addEventListener("DOMContentLoaded", function () {
 
 			const formData = new FormData(form);
 			const formDataObj = Object.fromEntries(formData.entries());
-			console.log("formobj", formDataObj);
+			/* console.log("formobj", formDataObj); */
 			perfSearch(formDataObj);
 		},
 		true
@@ -171,6 +171,15 @@ window.addEventListener("beforeunload", () => {
 
 // Function to handle the initial setup
 function initialize() {
+	const fileIndex = [
+		{ name: "assets.xml.gz", parentTag: "Asset" }/* ,
+		{ name: "templates.xml.gz", parentTag: "Template" },
+		{ name: "properties.xml.gz", parentTag: "Group[?(@.Name)]" }, */
+	];
+	fileIndex.forEach(ele => {
+		fetchStore(ele.name, ele.parentTag);
+	});
+
 	const selectElement = document.querySelector('select[name="searchFile"]');
 
 	// Set default value
@@ -196,6 +205,7 @@ window.addEventListener("DOMContentLoaded", initialize);
 /**
  * Function to update the visibility of an element based on the WorkerCount
  */
+let WorkerCount = 0;
 function WorkerStatus() {
 	const statusElement = document.getElementById("loader_div"); // The element to toggle
 

@@ -48,12 +48,13 @@ dbRequest.onupgradeneeded = function (event) {
 			]
 		},
 		{ name: "Dataset", keyPath: "ID" },
-		{ name: "Template", keyPath: "Name" }
+		{ name: "Template", keyPath: "Name", indexes: [{ name: "Name", keyPath: "Name" }] },
+		{ name: "Group[?(@.Name)]", keyPath: "Name", indexes: [{ name: "Name", keyPath: "Name" }] }
 	];
 
 	stores.forEach(config => {
 		if (!db.objectStoreNames.contains(config.name)) {
-			const objectStore = db.createObjectStore(config.name, { keyPath: config.keyPath });
+			const objectStore = db.createObjectStore(config.name, { keyPath: config.keyPath, autoIncrement: config.autoIncrement | false });
 
 			// Create indexes for the current object store
 			if (config.indexes) {
