@@ -1,4 +1,4 @@
-export { clearObjectStore, DBUnload, searchFastDB, getValueDB };
+export { clearObjectStore, DBUnload, searchFastDB, getValueDB, checkDB };
 
 /**
  * static declarations
@@ -36,7 +36,8 @@ dbRequest.onupgradeneeded = function (event) {
 			indexes: [
 				{ name: "GUID", keyPath: "Values.Standard.GUID" },
 				{ name: "Name", keyPath: "Values.Standard.Name" },
-				{ name: "Template", keyPath: "Template" }
+				{ name: "Template", keyPath: "Template" }/* ,
+				{ name: "test", keyPath: ["Template", "Values.Standard.Name", "Values.Standard.GUID"], options: { multiEntry: true } } */
 			]
 		},
 		{
@@ -49,17 +50,31 @@ dbRequest.onupgradeneeded = function (event) {
 		},
 		{ name: "Dataset", keyPath: "ID" },
 		{ name: "Template", keyPath: "Name", indexes: [{ name: "Name", keyPath: "Name" }] },
-		{ name: "Group[?(@.Name)]", keyPath: "Name", indexes: [{ name: "Name", keyPath: "Name" }] }
+		{ name: "Group[?(@.Name)]", keyPath: "Name", indexes: [{ name: "Name", keyPath: "Name" }] },
+		{
+			name: "DataSet",
+			keyPath: "Id",
+			indexes: [
+				{ name: "Name", keyPath: "Name" },
+				{ name: "ID", keyPath: "Id" },
+				{ name: "itemName", keyPath: "Items.Item.Name", options: { multiEntry: true } },
+				{ name: "itemID", keyPath: "Items.Item.Id", options: { multiEntry: true } }
+			]
+		},
+		{ name: "Property", keyPath: "Name", indexes: [{ name: "Name", keyPath: "Name" }] }
 	];
 
 	stores.forEach(config => {
 		if (!db.objectStoreNames.contains(config.name)) {
-			const objectStore = db.createObjectStore(config.name, { keyPath: config.keyPath, autoIncrement: config.autoIncrement | false });
+			const objectStore = db.createObjectStore(config.name, { keyPath: config.keyPath, autoIncrement: config.autoIncrement || false });
 
-			// Create indexes for the current object store
 			if (config.indexes) {
 				config.indexes.forEach(index => {
-					objectStore.createIndex(index.name, index.keyPath, { unique: false });
+					const options = { unique: false };
+					if (index.options) {
+						Object.assign(options, index.options);
+					}
+					objectStore.createIndex(index.name, index.keyPath, options);
 				});
 			}
 		}
@@ -70,8 +85,9 @@ dbRequest.onupgradeneeded = function (event) {
  *
  *
  * **/
+let db;
 dbRequest.onsuccess = function (event) {
-	const db = event.target.result;
+	db = event.target.result;
 	console.log("Database opened successfully");
 };
 
@@ -88,7 +104,7 @@ dbRequest.onsuccess = function (event) {
 function searchFastDB(parentTag, searchString, nonstrict = false) {
 	/* isNaN(Number(searchString)) ? null : (searchString = Number(searchString)); */
 	return new Promise((resolve, reject) => {
-		const request = indexedDB.open(dbName);
+		const request = db;
 
 		request.onerror = event => {
 			reject("Database error: " + event.target.errorCode);
@@ -147,7 +163,7 @@ function searchFastDB(parentTag, searchString, nonstrict = false) {
  * **/
 function getNameToGUID(parentTag, GUIDArray) {
 	return new Promise((resolve, reject) => {
-		const request = indexedDB.open(dbName);
+		const request = db;
 		/* console.warn("getNameToGUID"); */
 		request.onerror = event => {
 			reject("Database error: " + event.target.errorCode);
@@ -205,7 +221,7 @@ function DBUnload() {
 }
 
 async function clearObjectStore(storeName) {
-	const request = indexedDB.open(dbName);
+	const request = db;
 	request.onsuccess = function (event) {
 		const db = event.target.result;
 		const tx = db.transaction(storeName, "readwrite");
@@ -228,11 +244,11 @@ async function clearObjectStore(storeName) {
 // Retrieve data from IndexedDB
 function getValueDB(DBName, SearchValue) {
 	return new Promise((resolve, reject) => {
-		const request = indexedDB.open(dbName);
+		const request = db;
 
 		request.onsuccess = () => {
-			const db = request.result;
-			const transaction = db.transaction(DBName, "readonly");
+			const _db = request.result;
+			const transaction = _db.transaction(DBName, "readonly");
 			const objectStore = transaction.objectStore(DBName);
 			const getRequest = objectStore.get(Number(SearchValue));
 
@@ -248,6 +264,26 @@ function getValueDB(DBName, SearchValue) {
 
 		request.onerror = err => {
 			reject(`Error opening database: ${err}`);
+		};
+	});
+}
+
+/**
+ * @param {string} storeName
+ * **/
+async function checkDB(storeName) {
+	const tx = db.transaction(storeName, "readonly");
+	const store = tx.objectStore(storeName);
+
+	return new Promise((resolve, reject) => {
+		const countRequest = store.count();
+
+		countRequest.onsuccess = () => {
+			resolve(countRequest.result > 0); // Resolve with true if there are entries, otherwise false
+		};
+
+		countRequest.onerror = () => {
+			reject(countRequest.error); // Reject with the error if the count request fails
 		};
 	});
 }

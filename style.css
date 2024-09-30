@@ -16,8 +16,7 @@
   --bg-color-search-tab: lightgrey;
   --bg-color-result-table-row: #ebdac3;
   --bg-color-details-table-row: #ebdac3;
-
-
+  --bg-color-textarea: antiquewhite;
 
   --icon-ModeSwitch: 'dark_mode';
 }
@@ -33,8 +32,7 @@
   --bg-color-search-tab: #262c36;
   --bg-color-result-table-row: #262c36;
   --bg-color-details-table-row: #151b23;
-
-
+  --bg-color-textarea: #151b23;
 
   --icon-ModeSwitch: 'light_mode';
 }
@@ -45,14 +43,15 @@
  * Definitions for the entire site
  */
 
-html, body {
+html {
+  height: 100vh;
+}
+body {
   font-family: Niramit;
   font-size: 1em;
   margin: 0;
-  height: 100vw;
-/*  width: 100vw; */
   color: var(--font-color);
-  background-color: var(--bg-color-content);
+  background-color: var(--bg-color-content) !important;
 }
 
 .hidden {
@@ -72,10 +71,10 @@ html, body {
  * Loading spinner
  */
 #loader_div {
-  position: absolute;
-  width: 100vw;
+  position: fixed;
+  width: 100%;
   text-align: center;
-  top: calc(100vw / 2 - 35px);
+  top: calc(100vh / 2 - 35px);
   display: none;
 }
 .loader {
@@ -111,23 +110,25 @@ html, body {
   color: var(--font-color);
   background-position: right;
   background-repeat: no-repeat;
-  /* padding-right: 20px; */
   font-size: 24px;
   cursor: pointer;
 }
 .flip_icon {
   transform: scaleX(-1);
 }
-#css_toggle {
+.icons_row_search_tabs {
   float: right;
-  padding-right: 50px;
+  padding: 0 10px;
   height: 32px;
+  font-size: 20px;
+}
+.icons_row_search_tabs span{
+  color: #eaeaea;
+  font-size: 32px;
   width: 32px;
 }
 .icon-ModeSwitch::before {
   content: var(--icon-ModeSwitch);
-  color: #eaeaea;
-  font-size: 32px;
 }
 
 
@@ -142,11 +143,8 @@ html, body {
 
 #sitname {
   display: inline-block;
-}
-#license {
-  float: right;
-  display: inline-block;
-  margin: 10px;
+  font-size: 2em;
+  font-weight: bold;
 }
 
 /*
@@ -156,11 +154,13 @@ html, body {
   background-color: var(--bg-color-head);
 
 }
+#search_header {
+}
 
 /* search-forms */
 .search_tab {
   display: inline-block;
-  background-color: var(--bg-color-search-tab);
+  background-color: var(--bg-color-menues);
   padding: 3px 15px;
   border-radius: 5px 5px 0 0;
   font-weight: bold;
@@ -169,13 +169,16 @@ html, body {
 }
 
 .active_search_tab {
-  background-color: var(--bg-color-menues);
+  background-color: var(--bg-color-search-tab);
 }
 
 .search_forms {
-  background-color: var(--bg-color-menues);
+  background-color: var(--bg-color-content);
   min-height: 50px;
   padding: 10px;
+  border-style: none none solid none;
+  border-color: var(--bg-color-content);
+  border-width: 5px;
 }
 
 .search_form {
@@ -216,8 +219,7 @@ form > label, input[type=checkbox], button {
  */
 #content {
   display: flex;
-/*  width: 100vw; */
-/*  height: 100vw; */
+  height: 100%;
   margin-bottom: 30px;
   background-color: var(--bg-color-menues);
 }
@@ -230,23 +232,7 @@ form > label, input[type=checkbox], button {
   color: var(--font-color);
   display: inline-block;
   width: 25vw;
-  padding-right: 5px;
-}
-.result_list_row {
-  display: flex;
-  flex-wrap: nowrap;
-}
-.result_list_row > div {
-  flex-grow: 200;
-}
-.result_list_row > div:nth-child(1) {
-  flex-basis: 111px;
-  flex-grow: 0;
-  padding: 0 5px;
-}
-.result_list_row > div:nth-child(3) {
-  flex-basis: 40px;
-  flex-grow: 0;
+  padding-right: 20px;
 }
 
 .result_list_row:nth-child(even) {
@@ -271,16 +257,33 @@ form > label, input[type=checkbox], button {
 #result_list_head > div:nth-child(3) {
   flex-basis: 40px;
   flex-grow: 0;
+  border-style: none solid none none;
+  border-color: var(--bg-color-content);
+  border-width: 15px;
+}
+.result_list_row {
+  display: flex;
+  flex-wrap: nowrap;
 }
 
 .result_list_row > div {
+  flex-grow: 200;
   vertical-align: top;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
-  max-width: 10vw;
-  display: block;
-  margin-left: 5px;
+}
+.result_list_row > div:nth-child(1) {
+  flex-basis: 111px;
+  flex-grow: 0;
+  padding: 0 5px;
+}
+.result_list_row > div:nth-child(3) {
+  flex-basis: 40px;
+  flex-grow: 0;
+  border-style: none solid none none;
+  border-color: var(--bg-color-content);
+  border-width: 15px;
 }
 
 /*
@@ -289,30 +292,46 @@ form > label, input[type=checkbox], button {
 
 #result_details {
   display: inline-block;
-  width: 79vw;
+  width: 75vw;
 
 }
 
+#detail_head {
+  display: block;
+}
+#detail_head > div {
+  display: flex;
+  justify-content: center;
+}
+#detail_head > div > div {
+  align-self: center;
+  padding: 0 75px;
+}
+#detail_head > div > div:nth-child(1) {
+  font-size: xx-large;
+}
+#detail_head > div > div:nth-child(2) {
+  font-size: large;
+}
+#detail_head > div > div:nth-child(3) {
+  font-size: large;
+}
 #detail_view {
   background-color: var(--bg-color-menues);
-/*  width: 100%; */
   display: flex;
 }
 
 #detail_view_tab_bar {
   border-radius: 15px 15px 0 0;
-/*  width: 100%; */
-/*  padding-top: 5px; */
   display: flex;
 }
 
 .detail_tab {
   display: inline-block;
   background-color: var(--bg-color-menues);
-/*  padding: 3px 15px; */
   font-weight: bold;
   font-size: 1.25em;
-  width: calc(79vw / 3);
+  width: calc(75vw / 3);
   text-align: center;
   color: var(--font-color);
   cursor: pointer;
@@ -324,37 +343,15 @@ form > label, input[type=checkbox], button {
 }
 
 #detail_destination {
-  height: calc(100% - 54px);
+  /* height: 100%; */
 }
 
 #detail_destination > div {
   display: none;
   background-color: var(--bg-color-content);
   color: var(--font-color);
-/*  height: 100%; */
+  /* height: 100%; */
   padding: 20px 20px 3px 20px;
-}
-
-#detail_head {
-display: flex;;
-}
-#detail_head > div {
-  align-self: center;
-  padding: 0 75px;
-}
-#detail_head > div > div {
-}
-#details_values div {
-  display: flex;
-  justify-content: space-between;
-}
-#details_values > div:nth-child(even) {
-  background-color: var(--bg-color-details-table-row);
-}
-#details_values div div:nth-child(1){
-}
-#details_values div div:nth-child(2){
-  text-align: right;
 }
 
 #details_values_DATA div {
@@ -365,15 +362,21 @@ display: flex;;
   background-color: var(--bg-color-details-table-row);
 }
 #details_values_DATA div div:nth-child(1){
+  word-wrap: break-word;
 }
 #details_values_DATA div div:nth-child(2){
+  min-width: 10px;
+}
+#details_values_DATA div div:nth-child(3){
   text-align: right;
+  word-wrap: break-word;
 }
 
 
-#detail_xml textarea {
-  width: 100%;
-/*  height: calc(100% - 20px); */
-  padding: 0;
-
+#textarea_details_xml {
+  width: calc(100% - 20px);
+  height: 100%;
+  padding: 10px;
+  background-color: var(--bg-color-textarea);
+  color: var(--font-color);
 }

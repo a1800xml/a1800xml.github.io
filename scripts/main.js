@@ -2,7 +2,7 @@
 	 <script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>	 
 	 */
 
-import { clearObjectStore, DBUnload, searchFastDB, getValueDB } from "/scripts/lib/dataBase.js";
+import { clearObjectStore, DBUnload, searchFastDB, getValueDB, checkDB } from "/scripts/lib/dataBase.js";
 /* database modules */
 
 /**
@@ -80,48 +80,22 @@ async function GUIDtoDisplay(DBName, GUID) {
 }
 
 /**
- * @param {string} storeName
- * **/
-async function checkDB(storeName) {
-	const db = await openIndexedDB();
-	const tx = db.transaction(storeName, "readonly");
-	const store = tx.objectStore(storeName);
-
-	return new Promise((resolve, reject) => {
-		const countRequest = store.count();
-
-		countRequest.onsuccess = () => {
-			resolve(countRequest.result > 0); // Resolve with true if there are entries, otherwise false
-		};
-
-		countRequest.onerror = () => {
-			reject(countRequest.error); // Reject with the error if the count request fails
-		};
-	});
-}
-
-/**
  * @param {string} file
  * @param {string} parentTag
  * **/
 
-/* const wXML = new Worker("/scripts/worker/wFetch.js"); */
-
 function fetchStore(file, parentTag) {
-	const wXML = new Worker("/scripts/worker/wFetch.js");
-	const wX2J = new Worker("/scripts/worker/wX2J.js");
-	wXML.postMessage({ filePath: "/xml/" + file });
+	const wXML = new Worker("/scripts/worker/wF2DB.js");
+	wXML.postMessage({ filePath: "/xml/" + file, parentTag });
 	WorkerCount += 1;
 	WorkerStatus();
 	wXML.onmessage = e => {
-		const _XML = e.data.xmlData; //xml as string
-		/* const wX2J = new Worker("/scripts/worker/wX2J.js"); */
-		wX2J.postMessage({ xmlData: _XML, parentTag });
-		wX2J.onmessage = e => {
-			WorkerCount -= 1;
-			WorkerStatus();
-		};
+		console.log("new status", e);
+		WorkerCount -= 1;
+		WorkerStatus();
 	};
+	const testDB = checkDB(parentTag);
+	console.log(testDB);
 }
 
 /**
@@ -172,9 +146,11 @@ window.addEventListener("beforeunload", () => {
 // Function to handle the initial setup
 function initialize() {
 	const fileIndex = [
-		{ name: "assets.xml.gz", parentTag: "Asset" }/* ,
+		{ name: "assets.xml.gz", parentTag: "Asset" }/*,
+		{ name: "datasets.xml.gz", parentTag: "DataSet" } ,
 		{ name: "templates.xml.gz", parentTag: "Template" },
-		{ name: "properties.xml.gz", parentTag: "Group[?(@.Name)]" }, */
+		{ name: "properties.xml.gz", parentTag: "Group[?(@.Name)]" },
+		{name : "properties-toolone.xml.gz", parentTag: "Property"}*/
 	];
 	fileIndex.forEach(ele => {
 		fetchStore(ele.name, ele.parentTag);

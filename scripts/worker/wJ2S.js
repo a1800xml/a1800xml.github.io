@@ -10,9 +10,15 @@ importScripts("/scripts/lib/jspath/jsonpath.min.js"); //v1.1.1
  * **/
 function displayHead(Data) {
 	const result = [];
-	result["Icon"] = jsonpath.value(Data, "$..IconFilename");
-	result["Template"] = jsonpath.value(Data, "$..Template");
-	result["Name"] = jsonpath.value(Data, "$..Name") || jsonpath.query(Data, "$..Text");
+	result["Icon"] = jsonpath.value(Data, "$..IconFilename") || null;
+	result["Template"] = jsonpath.value(Data, "$..Template") || null;
+	result["Name"] = jsonpath.value(Data, "$..Name") || jsonpath.query(Data, "$..Text") || null;
+	console.log(
+		jsonpath.value(Data, "$..IconFilename"),
+		jsonpath.value(Data, "$..Template"),
+		jsonpath.value(Data, "$..Name"),
+		jsonpath.query(Data, "$..Text")
+	);
 	return result;
 }
 
@@ -25,7 +31,7 @@ function displayData(Data) {
 	function buildJPath(jsonObj, currentPath = "") {
 		if (typeof jsonObj === "object" && jsonObj !== null) {
 			for (const key in jsonObj) {
-				const newPath = currentPath ? `${currentPath}.${key}` : key;
+				const newPath = currentPath ? `${currentPath}/${key}` : key;
 				buildJPath(jsonObj[key], newPath);
 			}
 		} else {
