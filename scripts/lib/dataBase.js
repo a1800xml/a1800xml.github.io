@@ -5,7 +5,7 @@ export { clearObjectStore, DBUnload, searchFastDB, getValueDB, checkDB };
  * **/
 
 const dbName = "a1800XML";
-const dbVersion = 182;
+const dbVersion = 183;
 
 let dbRequest = indexedDB.open(dbName, dbVersion);
 

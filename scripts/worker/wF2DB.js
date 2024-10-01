@@ -7,7 +7,7 @@ importScripts("/scripts/lib/jspath/index-browser-umd.min.js"); //v9.0.0
  * Constants
  */
 const DB_NAME = "a1800XML";
-const DB_VERSION = 182;
+const DB_VERSION = 183;
 
 const parserOptions = {
 	ignoreAttributes: true,
