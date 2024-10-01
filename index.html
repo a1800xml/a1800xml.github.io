@@ -8,427 +8,449 @@
 
 <!DOCTYPE html>
 <html lang="en">
+	<head>
+		<meta charset="UTF-8" />
+		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Anno 1800 XML Search</title>
 
-	<title>Anno 1800 XML Search</title>
+		<link rel="icon" href="src/117_A.png" sizes="any" />
 
-	<link rel="icon" href="src/117_A.png" sizes="any">
+		<!-- google material icons https://fonts.google.com/icons -->
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+		/>
+		<!-- ModelViewer GLB -->
+		<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
+		<link rel="stylesheet" href="style.css" />
+		<link
+			rel="stylesheet"
+			href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200"
+		/>
 
-	<!-- google material icons https://fonts.google.com/icons -->
-	<link rel="stylesheet"
-		href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-	<!-- ModelViewer GLB -->
-	<script type="module" src="https://ajax.googleapis.com/ajax/libs/model-viewer/3.5.0/model-viewer.min.js"></script>
-	<link rel="stylesheet" href="style.css">
-	<link rel="stylesheet"
-		href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,100..700,0..1,-50..200" />
-
-	<!-- scripts for layout functionality -->
-	<!-- has to be revisited and shortened -->
-	<script>
-		function toggle_dark_mode() {
-			var element = document.body;
-			element.classList.toggle("dark-mode");
-		}
-		function toggleExpertMode() {
-			var x = document.getElementById("expert_form_fields");
-			var y = document.getElementById("icon_expert_search");
-			if (x.style.display === "none") {
-				x.style.display = "flex";
-				y.classList.add("flip_icon");
-			} else {
-				x.style.display = "none";
-				y.classList.remove("flip_icon");
+		<!-- scripts for layout functionality -->
+		<!-- has to be revisited and shortened -->
+		<script>
+			function toggle_dark_mode() {
+				const element = document.body;
+				element.classList.toggle("dark-mode");
 			}
-		}
-		/* function opensearchform(form_id) {
-			document.getElementById("form_asset_search").style.display = "none";
-			document.getElementById("form_text_search").style.display = "none";
-			document.getElementById("form_template_search").style.display = "none";
-			document.getElementById("form_propertie_search").style.display = "none";
-			document.getElementById("form_toolone_search").style.display = "none";
-			document.getElementById("form_dataset_search").style.display = "none";
-			document.getElementById("asset_search").classList.remove("active_search_tab");
-			document.getElementById("text_search").classList.remove("active_search_tab");
-			document.getElementById("template_search").classList.remove("active_search_tab");
-			document.getElementById("propertie_search").classList.remove("active_search_tab");
-			document.getElementById("toolone_search").classList.remove("active_search_tab");
-			document.getElementById("dataset_search").classList.remove("active_search_tab");
-			document.getElementById("form_" + form_id).style.display = "block";
-			document.getElementById(form_id).classList.add("active_search_tab");
-		} */
-		function opendetails(tab_id) {
-			document.getElementById("detail_data").style.display = "none";
-			document.getElementById("detail_xml").style.display = "none";
-			document.getElementById("detail_img").style.display = "none";
-			document.getElementById("detail_data_tab").classList.remove("active_detail_tab");
-			document.getElementById("detail_xml_tab").classList.remove("active_detail_tab");
-			document.getElementById("detail_img_tab").classList.remove("active_detail_tab");
-			document.getElementById(tab_id).style.display = "block";
-			document.getElementById(tab_id + "_tab").classList.add("active_detail_tab");
-		}
+			function toggleExpertMode() {
+				const x = document.getElementById("expert_form_fields");
+				const y = document.getElementById("icon_expert_search");
+				if (x.style.display === "none") {
+					x.style.display = "flex";
+					y.classList.add("flip_icon");
+				} else {
+					x.style.display = "none";
+					y.classList.remove("flip_icon");
+				}
+			}
 
-		document.addEventListener("DOMContentLoaded", () => {
-			const searchTabs = document.getElementsByClassName("search_tab");
+			function opendetails(tab_id) {
+				document.getElementById("detail_data").style.display = "none";
+				document.getElementById("detail_xml").style.display = "none";
+				document.getElementById("detail_img").style.display = "none";
+				document.getElementById("detail_data_tab").classList.remove("active_detail_tab");
+				document.getElementById("detail_xml_tab").classList.remove("active_detail_tab");
+				document.getElementById("detail_img_tab").classList.remove("active_detail_tab");
+				document.getElementById(tab_id).style.display = "block";
+				document.getElementById(tab_id + "_tab").classList.add("active_detail_tab");
+			}
 
-			Array.from(searchTabs).forEach(tab => {
-				tab.addEventListener("click", event => {
-					Array.from(searchTabs).forEach(e => {
-						if (e.id == event.srcElement.id) {
-							document.getElementById(e.id).classList.add("active_search_tab");
-						} else {
-							document.getElementById(e.id).classList.remove("active_search_tab");
-						}
-					})
-					const searchForm = document.getElementsByClassName("search_form");
-					Array.from(searchForm).forEach(e => {
-						if (e.id.includes(event.srcElement.id)) {
-							document.getElementById(e.id).style.display = "block"
-						} else {
-							document.getElementById(e.id).style.display = "none"
-						}
-					})
+			document.addEventListener("DOMContentLoaded", () => {
+				const searchTabs = document.getElementsByClassName("search_tab");
+
+				Array.from(searchTabs).forEach((tab) => {
+					tab.addEventListener("click", (event) => {
+						const dbc = document.getElementById("DBCount");
+						//console.log(event.srcElement.dataset["parenttag"]);
+						dbc.innerHTML = dbc.dataset[event.srcElement.dataset["parenttag"]];
+						Array.from(searchTabs).forEach((e) => {
+							if (e.id == event.srcElement.id) {
+								document.getElementById(e.id).classList.add("active_search_tab");
+							} else {
+								document.getElementById(e.id).classList.remove("active_search_tab");
+							}
+						});
+						const searchForm = document.getElementsByClassName("search_form");
+						Array.from(searchForm).forEach((e) => {
+							if (e.id.includes(event.srcElement.id)) {
+								document.getElementById(e.id).style.display = "block";
+							} else {
+								document.getElementById(e.id).style.display = "none";
+							}
+						});
+					});
 				});
 			});
-		});
+		</script>
+	</head>
 
-	</script>
-
-</head>
-
-<body class="dark-mode">
-	<div id="loader_div"><span class="loader"></span></div>
-	<div id="header">
-		<div id="headbar">
-			<div id="sitname">Anno 1800 XML Search : GU 18.2</div>
-			<div id="css_toggle" class="icons_row_search_tabs" onclick="toggle_dark_mode()" title="toggle dark mode">
-				<span class="material-symbols-outlined icon-ModeSwitch"></span>
+	<body class="dark-mode">
+		<div id="loader_div"><span class="loader"></span></div>
+		<div id="header">
+			<div id="headbar">
+				<div id="sitname">Anno 1800 XML Search : GU 18.2</div>
+				<div id="css_toggle" class="icons_row_search_tabs" onclick="toggle_dark_mode()" title="toggle dark mode">
+					<span class="material-symbols-outlined icon-ModeSwitch"></span>
+				</div>
+				<div id="reload_db" class="icons_row_search_tabs" title="Reload Database">
+					<span class="material-symbols-outlined">database_off</span>
+				</div>
+				<div id="DBCount" class="icons_row_search_tabs">0</div>
 			</div>
-			<div id="unload_db" class="icons_row_search_tabs" onclick="" title="Unload Database">
-				<span class="material-symbols-outlined">database_off</span>
+			<!-- id => headbar -->
+
+			<div id="searchbar">
+				<div id="search_header">
+					<div data-parentTag="asset" id="asset_search" class="search_tab active_search_tab">Asset_search</div>
+					<div data-parentTag="text" id="text_search" class="search_tab">Text-Search</div>
+					<div data-parentTag="template" id="template_search" class="search_tab">Templates</div>
+					<div data-parentTag="group_____name__" id="propertie_search" class="search_tab">Properties</div>
+					<div data-parentTag="property" id="toolone_search" class="search_tab">Prop.-Toolone</div>
+					<div data-parentTag="dataset" id="dataset_search" class="search_tab">Dataset</div>
+				</div>
+				<!-- id => search_header -->
+				<div class="search_forms">
+					<div id="form_asset_search" class="search_form" style="display: block">
+						<form id="search-form">
+							<div id="asset_search_form_elements">
+								<div>
+									<input type="hidden" name="searchFile" value="assets.xml.gz" />
+									<input type="hidden" name="parentTag" value="Asset" />
+									<input type="text" name="searchString" placeholder="GUID or some string for asset or template name" />
+								</div>
+								<div>
+									<label><input type="checkbox" name="nonstrict" checked />Non-strikt</label>
+								</div>
+								<div id="container_expert_mode" onclick="toggleExpertMode()">
+									<div>Expert-Mode</div>
+									<div>
+										<span id="icon_expert_search" class="material-symbols-outlined">settings_b_roll</span>
+									</div>
+								</div>
+								<div id="expert_form_fields" style="display: none">
+									<div>
+										<input type="text" name="searchTag" placeholder="Property Name (optional)" />
+									</div>
+								</div>
+								<div>
+									<button class="material-symbols-outlined btn" id="your-id">search</button>
+								</div>
+							</div>
+						</form>
+					</div>
+					<!-- id => form_asset_search | class => search_form -->
+					<div id="form_text_search" class="search_form">
+						<form id="search-form">
+							<input type="hidden" name="parentTag" value="Text" />
+							<input type="hidden" name="searchTag" value='["Text","GUID"]' />
+							<input type="text" name="searchString" placeholder="Enter Text you wanna search for" />
+							<select name="searchFile">
+								<option value="texts_brazilian.xml.gz">Brazilian</option>
+								<option value="texts_chinese.xml.gz">Chinese</option>
+								<option value="texts_english.xml.gz" selected="selected">English</option>
+								<!--Default-->
+								<option value="texts_french.xml.gz">French</option>
+								<option value="texts_german.xml.gz">German</option>
+								<option value="texts_italian.xml.gz">Italian</option>
+								<option value="texts_japanese.xml.gz">Japanese</option>
+								<option value="texts_korean.xml.gz">Korean</option>
+								<option value="texts_polish.xml.gz">Polish</option>
+								<option value="texts_portuguese.xml.gz">Portuguese</option>
+								<option value="texts_russian.xml.gz">Russian</option>
+								<option value="texts_spanish.xml.gz">Spanish</option>
+								<option value="texts_taiwanese.xml.gz">Taiwanese</option>
+							</select>
+							<label><input type="checkbox" name="nonstrict" checked />Non-strikt</label>
+							<button class="material-symbols-outlined btn" id="your-id">search</button>
+						</form>
+					</div>
+					<!-- id => form_text_search | class => search_form -->
+					<div id="form_template_search" class="search_form">
+						<form id="form_template_search_form">
+							<input type="text" name="searchString" placeholder="Enter Text you wanna search for" />
+							<button class="material-symbols-outlined btn">search</button>
+						</form>
+					</div>
+					<!-- id => form_waldow_search | class => search_form -->
+					<div id="form_propertie_search" class="search_form">
+						<form id="form_propertie_search_form">
+							<input type="text" name="searchString" placeholder="Enter Text you wanna search for" />
+							<button class="material-symbols-outlined btn">search</button>
+						</form>
+					</div>
+					<!-- id => form_waldow_search | class => search_form -->
+					<div id="form_toolone_search" class="search_form">
+						<form id="form_toolone_search_form">
+							<input type="text" name="searchString" placeholder="Enter Text you wanna search for" />
+							<button class="material-symbols-outlined btn">search</button>
+						</form>
+					</div>
+					<!-- id => form_waldow_search | class => search_form -->
+					<div id="form_dataset_search" class="search_form">
+						<form id="form_dataset_search_form">
+							<input type="text" name="searchString" placeholder="Enter Text you wanna search for" />
+							<button class="material-symbols-outlined btn">search</button>
+						</form>
+					</div>
+					<!-- id => form_waldow_search | class => search_form -->
+				</div>
+				<!-- id => search_forms -->
 			</div>
-			<div id="DBCount" class="icons_row_search_tabs">4646654</div>
+			<!-- id => searchbar -->
 		</div>
-		<!-- id => headbar -->
+		<!-- id => header -->
+		<div id="content">
+			<!------------------------------------------------->
+			<!------- Result list on LEFT side        --------->
+			<!------- can be used for list of results --------->
+			<!------------------------------------------------->
 
-		<div id="searchbar">
-			<div id="search_header">
-				<!--<div id="asset_search" class="search_tab active_search_tab" onclick="opensearchform('asset_search')">Asset_search</div><!-- id = asset_search | class => search_tab -->
-				<!--<div id="text_search" class="search_tab" onclick="opensearchform('text_search')">Text-Search</div><!-- id = text_search | class => search_tab -->
-				<!--<div id="template_search" class="search_tab" onclick="opensearchform('template_search')">Templates</div><!-- id = template_search | class => search_tab -->
-				<!--<div id="propertie_search" class="search_tab" onclick="opensearchform('propertie_search')">Properties</div><!-- id = propertie_search | class => search_tab -->
-				<!--<div id="toolone_search" class="search_tab" onclick="opensearchform('toolone_search')">Prop.-Toolone</div><!-- id = toolone_search | class => search_tab -->
-				<!--<div id="dataset_search" class="search_tab" onclick="opensearchform('dataset_search')">Dataset</div><!-- id = dataset_search | class => search_tab -->
+			<div id="result_list">
+				<div id="result_list_head">
+					<!-- head -->
+					<div>GUID</div>
+					<div>Text</div>
+					<div>Link</div>
+				</div>
+				<div id="result_list_target">
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+					<div data-id="1" class="result_list_row">
+						<!-- line -->
+						<div>2147483647</div>
+						<div>Canned Food</div>
+						<div>
+							<button class="material-symbols-outlined btn">search</button>
+						</div>
+					</div>
+				</div>
+			</div>
+			<!-- id => result_list -->
 
-				<div id="asset_search" class="search_tab active_search_tab">Asset_search</div>
-				<!-- id = asset_search | class => search_tab -->
-				<div id="text_search" class="search_tab">Text-Search</div>
-				<!-- id = text_search | class => search_tab -->
-				<div id="template_search" class="search_tab">Templates</div>
-				<!-- id = template_search | class => search_tab -->
-				<div id="propertie_search" class="search_tab">Properties</div>
-				<!-- id = propertie_search | class => search_tab -->
-				<div id="toolone_search" class="search_tab">Prop.-Toolone</div>
-				<!-- id = toolone_search | class => search_tab -->
-				<div id="dataset_search" class="search_tab">Dataset</div>
-				<!-- id = dataset_search | class => search_tab -->
+			<!------------------------------------------------->
+			<!------- Result list on RIGHT side       --------->
+			<!------- can be used for details of sth  --------->
+			<!------------------------------------------------->
 
+			<div id="result_details">
+				<div id="detail_head">
+					<div>
+						<div>Asset: <span id="details_name_asset">Name</span></div>
+						<div>
+							GUID: <span id="details_name_guid">1010217</span><br />
+							Template: <span id="details_name_template">Name</span>
+						</div>
+						<div>
+							<img id="details_icon" src="icos/main/3dicons/icon_beams_0.png" alt="Icon" title="Icon" />
+						</div>
+					</div>
+				</div>
+				<!-- id => detail_head -->
 
-			</div><!-- id => search_header -->
-			<div class="search_forms">
-				<div id="form_asset_search" class="search_form" style="display: block">
-					<form id="search-form">
-						<div id="asset_search_form_elements">
+				<div id="detail_view">
+					<div id="detail_view_tab_bar">
+						<div id="detail_data_tab" class="detail_tab active_detail_tab" onclick="opendetails('detail_data')">DATA</div>
+						<div id="detail_xml_tab" class="detail_tab" onclick="opendetails('detail_xml')">XML</div>
+						<div id="detail_img_tab" class="detail_tab" onclick="opendetails('detail_img')">3D</div>
+					</div>
+				</div>
+				<!-- id => detail_view -->
+
+				<div id="detail_destination">
+					<div id="detail_data" style="display: block">
+						<h4>Values:</h4>
+						<div id="details_values_DATA">
 							<div>
-								<input type="hidden" name="searchFile" value="assets.xml.gz">
-								<input type="hidden" name="parentTag" value="Asset">
-								<input type="text" name="searchString"
-									placeholder="GUID or some string for asset or template name">
+								<div>Values/CameraSettings/RotatingCameraViewSpeed</div>
+								<div></div>
+								<div>data/ui/2kimages/main/3dicons/icon_camera.png</div>
 							</div>
-							<div><label><input type="checkbox" name="nonstrict" checked>Non-strikt</label></div>
-							<div id="container_expert_mode" onclick="toggleExpertMode()">
-								<div>Expert-Mode</div>
-								<div>
-									<span id="icon_expert_search"
-										class="material-symbols-outlined">settings_b_roll</span>
-								</div>
+							<div>
+								<div>Values/CameraSettings/RotatingCameraViewSpeed</div>
+								<div></div>
+								<div>data/ui/2kimages/main/3dicons/icon_camera.png</div>
 							</div>
-							<div id="expert_form_fields" style="display: none">
-								<div>
-									<input type="text" name="searchTag" placeholder="Property Name (optional)">
-								</div>
+							<div>
+								<div>Values/CameraSettings/RotatingCameraViewSpeed</div>
+								<div></div>
+								<div>data/ui/2kimages/main/3dicons/icon_camera.png</div>
 							</div>
-							<div><button class="material-symbols-outlined btn" id="your-id">search</button></div>
+							<div>
+								<div>Values/CameraSettings/RotatingCameraViewSpeed</div>
+								<div></div>
+								<div>data/ui/2kimages/main/3dicons/icon_camera.png</div>
+							</div>
 						</div>
-					</form>
-				</div><!-- id => form_asset_search | class => search_form -->
-				<div id="form_text_search" class="search_form">
-					<form id="search-form">
-						<input type="hidden" name="parentTag" value="Text">
-						<input type="hidden" name="searchTag" value='["Text","GUID"]'>
-						<input type="text" name="searchString" placeholder="Enter Text you wanna search for">
-						<select name="searchFile">
-							<option value="texts_brazilian.xml.gz">Brazilian</option>
-							<option value="texts_chinese.xml.gz">Chinese</option>
-							<option value="texts_english.xml.gz" selected="selected">English</option><!--Default-->
-							<option value="texts_french.xml.gz">French</option>
-							<option value="texts_german.xml.gz">German</option>
-							<option value="texts_italian.xml.gz">Italian</option>
-							<option value="texts_japanese.xml.gz">Japanese</option>
-							<option value="texts_korean.xml.gz">Korean</option>
-							<option value="texts_polish.xml.gz">Polish</option>
-							<option value="texts_portuguese.xml.gz">Portuguese</option>
-							<option value="texts_russian.xml.gz">Russian</option>
-							<option value="texts_spanish.xml.gz">Spanish</option>
-							<option value="texts_taiwanese.xml.gz">Taiwanese</option>
-						</select>
-						<label><input type="checkbox" name="nonstrict" checked>Non-strikt</label>
-						<button class="material-symbols-outlined btn" id="your-id">search</button>
-					</form>
-				</div><!-- id => form_text_search | class => search_form -->
-				<div id="form_template_search" class="search_form">
-					<form id="form_template_search_form">
-						<input type="text" name="searchString" placeholder="Enter Text you wanna search for">
-						<button class="material-symbols-outlined btn">search</button>
-					</form>
-				</div><!-- id => form_waldow_search | class => search_form -->
-				<div id="form_propertie_search" class="search_form">
-					<form id="form_propertie_search_form">
-						<input type="text" name="searchString" placeholder="Enter Text you wanna search for">
-						<button class="material-symbols-outlined btn">search</button>
-					</form>
-				</div><!-- id => form_waldow_search | class => search_form -->
-				<div id="form_toolone_search" class="search_form">
-					<form id="form_toolone_search_form">
-						<input type="text" name="searchString" placeholder="Enter Text you wanna search for">
-						<button class="material-symbols-outlined btn">search</button>
-					</form>
-				</div><!-- id => form_waldow_search | class => search_form -->
-				<div id="form_dataset_search" class="search_form">
-					<form id="form_dataset_search_form">
-						<input type="text" name="searchString" placeholder="Enter Text you wanna search for">
-						<button class="material-symbols-outlined btn">search</button>
-					</form>
-				</div><!-- id => form_waldow_search | class => search_form -->
-
-			</div><!-- id => search_forms -->
-		</div><!-- id => searchbar -->
-	</div><!-- id => header -->
-	<div id="content">
-
-		<!------------------------------------------------->
-		<!------- Result list on LEFT side        --------->
-		<!------- can be used for list of results --------->
-		<!------------------------------------------------->
-
-		<div id="result_list">
-			<div id="result_list_head">
-				<!-- head -->
-				<div>GUID</div>
-				<div>Text</div>
-				<div>Link</div>
-			</div>
-			<div id="result_list_target">
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-				<div data-id="1" class="result_list_row">
-					<!-- line -->
-					<div>2147483647</div>
-					<div>Canned Food</div>
-					<div><button class="material-symbols-outlined btn">search</button></div>
-				</div>
-			</div>
-
-		</div><!-- id => result_list -->
-
-		<!------------------------------------------------->
-		<!------- Result list on RIGHT side       --------->
-		<!------- can be used for details of sth  --------->
-		<!------------------------------------------------->
-
-		<div id="result_details">
-
-
-			<div id="detail_head">
-				<div>
-					<div>
-						Asset: <span id="details_name_asset">Name</span>
+						<!-- ID => details_values_DATA -->
 					</div>
-					<div>
-						GUID: <span id="details_name_guid">1010217</span><br>
-						Template: <span id="details_name_template">Name</span>
-					</div>
-					<div><img id="details_icon" src="icos/main/3dicons/icon_beams_0.png" alt="Icon" title="Icon"></div>
+					<!-- id => detail_data -->
+
+					<div id="detail_xml">has to be done</div>
+					<!-- id => detail_xml -->
+
+					<div id="detail_img">sample img</div>
+					<!-- id => detail_img -->
 				</div>
-			</div><!-- id => detail_head -->
+				<!-- id => detail_destination -->
+			</div>
+			<!-- id => result_details -->
+		</div>
+		<!-- id => content -->
 
-			<div id="detail_view">
-				<div id="detail_view_tab_bar">
-					<div id="detail_data_tab" class="detail_tab active_detail_tab" onclick="opendetails('detail_data')">
-						DATA</div>
-					<div id="detail_xml_tab" class="detail_tab" onclick="opendetails('detail_xml')">XML</div>
-					<div id="detail_img_tab" class="detail_tab" onclick="opendetails('detail_img')">3D</div>
-				</div>
-			</div><!-- id => detail_view -->
-
-			<div id="detail_destination">
-
-				<div id="detail_data" style="display: block">
-					<h4>Values:</h4>
-					<div id="details_values_DATA">
-						<div>
-							<div>Values/CameraSettings/RotatingCameraViewSpeed</div>
-							<div></div>
-							<div>data/ui/2kimages/main/3dicons/icon_camera.png</div>
-						</div>
-						<div>
-							<div>Values/CameraSettings/RotatingCameraViewSpeed</div>
-							<div></div>
-							<div>data/ui/2kimages/main/3dicons/icon_camera.png</div>
-						</div>
-						<div>
-							<div>Values/CameraSettings/RotatingCameraViewSpeed</div>
-							<div></div>
-							<div>data/ui/2kimages/main/3dicons/icon_camera.png</div>
-						</div>
-						<div>
-							<div>Values/CameraSettings/RotatingCameraViewSpeed</div>
-							<div></div>
-							<div>data/ui/2kimages/main/3dicons/icon_camera.png</div>
-						</div>
-					</div> <!-- ID => details_values_DATA -->
-
-				</div><!-- id => detail_data -->
-
-				<div id="detail_xml">has to be done</div> <!-- id => detail_xml -->
-
-				<div id="detail_img">sample img</div><!-- id => detail_img -->
-
-			</div><!-- id => detail_destination -->
-
-
-		</div><!-- id => result_details -->
-
-	</div><!-- id => content -->
-
-
-	<script type="module" src="./scripts/main.js"></script>
-</body>
-
-
+		<script type="module" src="./scripts/main.js"></script>
+	</body>
 </html>

@@ -17,7 +17,7 @@ let dbRequest = indexedDB.open(dbName, dbVersion);
  * event from callback
  * error handler
  * **/
-dbRequest.onerror = event => {
+dbRequest.onerror = (event) => {
 	console.error(`Database error: ${event.target.error?.message}`);
 };
 
@@ -25,7 +25,7 @@ dbRequest.onerror = event => {
  * event from callback
  * setup & upgrade handler
  * **/
-dbRequest.onupgradeneeded = function (event) {
+dbRequest.onupgradeneeded = (event) => {
 	const db = event.target.result;
 
 	// Object store configuration
@@ -36,40 +36,51 @@ dbRequest.onupgradeneeded = function (event) {
 			indexes: [
 				{ name: "GUID", keyPath: "Values.Standard.GUID" },
 				{ name: "Name", keyPath: "Values.Standard.Name" },
-				{ name: "Template", keyPath: "Template" }/* ,
-				{ name: "test", keyPath: ["Template", "Values.Standard.Name", "Values.Standard.GUID"], options: { multiEntry: true } } */
-			]
+				{ name: "Template", keyPath: "Template" },
+			],
 		},
 		{
 			name: "Text",
 			keyPath: "GUID",
 			indexes: [
 				{ name: "Name", keyPath: "Text" },
-				{ name: "GUID", keyPath: "GUID" }
-			]
+				{ name: "GUID", keyPath: "GUID" },
+			],
 		},
-		{ name: "Dataset", keyPath: "ID" },
-		{ name: "Template", keyPath: "Name", indexes: [{ name: "Name", keyPath: "Name" }] },
-		{ name: "Group[?(@.Name)]", keyPath: "Name", indexes: [{ name: "Name", keyPath: "Name" }] },
+		{
+			name: "Template",
+			keyPath: "Name",
+			indexes: [{ name: "Name", keyPath: "Name" }],
+		},
+		{
+			name: "Group[?(@.Name)]",
+			keyPath: "Name",
+			indexes: [{ name: "Name", keyPath: "Name" }],
+		},
 		{
 			name: "DataSet",
 			keyPath: "Id",
 			indexes: [
 				{ name: "Name", keyPath: "Name" },
 				{ name: "ID", keyPath: "Id" },
-				{ name: "itemName", keyPath: "Items.Item.Name", options: { multiEntry: true } },
-				{ name: "itemID", keyPath: "Items.Item.Id", options: { multiEntry: true } }
-			]
+			],
 		},
-		{ name: "Property", keyPath: "Name", indexes: [{ name: "Name", keyPath: "Name" }] }
+		{
+			name: "Property",
+			keyPath: "Name",
+			indexes: [{ name: "Name", keyPath: "Name" }],
+		},
 	];
 
-	stores.forEach(config => {
+	stores.forEach((config) => {
 		if (!db.objectStoreNames.contains(config.name)) {
-			const objectStore = db.createObjectStore(config.name, { keyPath: config.keyPath, autoIncrement: config.autoIncrement || false });
+			const objectStore = db.createObjectStore(config.name, {
+				keyPath: config.keyPath,
+				autoIncrement: config.autoIncrement || false,
+			});
 
 			if (config.indexes) {
-				config.indexes.forEach(index => {
+				config.indexes.forEach((index) => {
 					const options = { unique: false };
 					if (index.options) {
 						Object.assign(options, index.options);
@@ -102,58 +113,45 @@ dbRequest.onsuccess = function (event) {
  * @returns Array of Arrays with Table [GUID, Name]
  * **/
 function searchFastDB(parentTag, searchString, nonstrict = false) {
-	/* isNaN(Number(searchString)) ? null : (searchString = Number(searchString)); */
 	return new Promise((resolve, reject) => {
-		const request = db;
+		const transaction = db.transaction(parentTag, "readonly");
+		const objectStore = transaction.objectStore(parentTag);
+		const result = [];
+		const promises = [];
 
-		request.onerror = event => {
-			reject("Database error: " + event.target.errorCode);
-		};
+		// Convert DOMStringList to an array
+		Array.from(objectStore.indexNames).forEach((indexName) => {
+			const promise = new Promise((resolveCursor, rejectCursor) => {
+				const cursorRequest = objectStore.index(indexName).openKeyCursor();
 
-		request.onsuccess = event => {
-			const result = [];
-			const db = event.target.result;
-			const _db = db.transaction(parentTag, "readonly").objectStore(parentTag);
-			const promises = [];
+				cursorRequest.onsuccess = (event) => {
+					let pointer = event.target.result;
 
-			// Loop through all indexes and open cursors
-			Array.from(_db.indexNames).forEach(indexName => {
-				const promise = new Promise((resolveCursor, rejectCursor) => {
-					const cursorRequest = _db.index(indexName).openKeyCursor();
+					if (pointer) {
+						const keyStr = pointer.key.toString().toLowerCase();
+						const searchStr = searchString.toLowerCase();
 
-					cursorRequest.onsuccess = event => {
-						let pointer = event.target.result;
-
-						if (pointer) {
-							const keyStr = pointer.key.toString().toLowerCase();
-							const searchStr = searchString.toLowerCase();
-
-							if (nonstrict ? keyStr.includes(searchStr) : keyStr === searchStr) {
-								result.push(pointer.primaryKey);
-							}
-							pointer.continue();
-						} else {
-							resolveCursor();
+						if (nonstrict ? keyStr.includes(searchStr) : keyStr === searchStr) {
+							result.push(pointer.primaryKey);
 						}
-					};
+						pointer.continue();
+					} else {
+						resolveCursor();
+					}
+				};
 
-					cursorRequest.onerror = event => rejectCursor(event.target.error);
-				});
-
-				promises.push(promise);
+				cursorRequest.onerror = (event) => rejectCursor(event.target.error);
 			});
 
-			// Wait for all cursor operations to finish
-			Promise.all(promises)
-				.then(() => {
-					/* console.log(result); // array of GUID */
-					const aResult = getNameToGUID(parentTag, result);
-					resolve(aResult); // Resolve the final result array
-				})
-				.catch(error => {
-					reject(error);
-				});
-		};
+			promises.push(promise);
+		});
+
+		Promise.all([promises])
+			.then(() => {
+				const finalResult = getNameToGUID(parentTag, result);
+				resolve(finalResult);
+			})
+			.catch((error) => reject(error));
 	});
 }
 
@@ -161,61 +159,51 @@ function searchFastDB(parentTag, searchString, nonstrict = false) {
  * @param {string} parentTag
  * @param {Number[]} GUIDArray
  * **/
+
 function getNameToGUID(parentTag, GUIDArray) {
 	return new Promise((resolve, reject) => {
-		const request = db;
-		/* console.warn("getNameToGUID"); */
-		request.onerror = event => {
-			reject("Database error: " + event.target.errorCode);
+		const transaction = db.transaction(parentTag, "readonly");
+		const objectStore = transaction.objectStore(parentTag);
+		const cursorRequest = objectStore.index("Name").openKeyCursor();
+		const resultArray = [];
+
+		cursorRequest.onsuccess = (event) => {
+			const cursor = event.target.result;
+
+			// Iterate over the cursor as long as it's not null
+			if (cursor) {
+				const primaryKeyIndex = GUIDArray.indexOf(cursor.primaryKey);
+				if (primaryKeyIndex > -1) {
+					resultArray.push({ primaryKey: cursor.primaryKey, value: cursor.key });
+					GUIDArray.splice(primaryKeyIndex, 1); // Remove found GUID from the array
+				}
+
+				cursor.continue(); // Continue to next entry
+			} else {
+				// Cursor is null, iteration is complete
+				resolve(resultArray);
+			}
 		};
 
-		request.onsuccess = event => {
-			const db = event.target.result;
-			const _db = db.transaction(parentTag, "readonly").objectStore(parentTag);
-
-			const promise = new Promise((resolveCursor, rejectCursor) => {
-				const cursorRequest = _db.index("Name").openKeyCursor();
-				let resultArray = [];
-
-				cursorRequest.onsuccess = event => {
-					let pointer = event.target.result;
-
-					if (pointer) {
-						// Check if the primaryKey already exists in the array
-						const _i = GUIDArray.indexOf(pointer.primaryKey);
-						if (_i > -1) {
-							resultArray.push({ primaryKey: pointer.primaryKey, value: pointer.key });
-							//remove found item from GUIDArray
-							GUIDArray.splice(_i, 1);
-							/* console.log(GUIDArray); */
-						}
-
-						pointer.continue();
-					} else {
-						resolveCursor(resultArray); // Resolve with the final array
-					}
-				};
-
-				cursorRequest.onerror = event => rejectCursor(event.target.error);
-			});
-
-			Promise.all([promise])
-				.then(resultArray => {
-					resolve(resultArray); // Array of [GUID, indexKey or ""]
-				})
-				.catch(error => {
-					reject(error);
-				});
+		cursorRequest.onerror = (event) => {
+			reject("Cursor error: " + event.target.error);
 		};
 	});
 }
 
 function DBUnload() {
+	db.close();
 	const request = indexedDB.deleteDatabase(dbName);
+
+	request.onblocked = () => {
+		console.warn(`Database ${dbName} deletion is blocked by open connections.`);
+	};
+
 	request.onsuccess = () => {
 		console.log(`Database ${dbName} deleted successfully.`);
 	};
-	request.onerror = event => {
+
+	request.onerror = (event) => {
 		console.error("Database deletion failed:", event.target.error);
 	};
 }
@@ -244,46 +232,58 @@ async function clearObjectStore(storeName) {
 // Retrieve data from IndexedDB
 function getValueDB(DBName, SearchValue) {
 	return new Promise((resolve, reject) => {
-		const request = db;
-
+		const request = indexedDB.open(dbName, dbVersion);
+		console.log("valuedb here");
 		request.onsuccess = () => {
 			const _db = request.result;
+			console.log("valuedb here2");
 			const transaction = _db.transaction(DBName, "readonly");
+			console.log("valuedb here3");
 			const objectStore = transaction.objectStore(DBName);
+			console.log("valuedb here4");
 			const getRequest = objectStore.get(Number(SearchValue));
-
+			console.log("valuedb here5");
 			getRequest.onsuccess = () => {
 				const value = getRequest.result;
 				resolve(value);
 			};
 
-			getRequest.onerror = err => {
+			getRequest.onerror = (err) => {
 				reject(`Error getting data from object store: ${err}`);
 			};
 		};
 
-		request.onerror = err => {
+		request.onerror = (err) => {
 			reject(`Error opening database: ${err}`);
 		};
 	});
 }
 
 /**
- * @param {string} storeName
+ * @param {string} DBName
  * **/
-async function checkDB(storeName) {
-	const tx = db.transaction(storeName, "readonly");
-	const store = tx.objectStore(storeName);
-
+function checkDB(DBName) {
 	return new Promise((resolve, reject) => {
-		const countRequest = store.count();
+		const request = indexedDB.open(dbName, dbVersion);
 
-		countRequest.onsuccess = () => {
-			resolve(countRequest.result > 0); // Resolve with true if there are entries, otherwise false
+		request.onsuccess = () => {
+			const _db = request.result;
+			const transaction = _db.transaction(DBName, "readonly");
+			const objectStore = transaction.objectStore(DBName);
+			const getRequest = objectStore.count();
+
+			getRequest.onsuccess = () => {
+				const value = getRequest.result;
+				resolve(value);
+			};
+
+			getRequest.onerror = (err) => {
+				reject(`Error getting data from object store: ${err}`);
+			};
 		};
 
-		countRequest.onerror = () => {
-			reject(countRequest.error); // Reject with the error if the count request fails
+		request.onerror = (err) => {
+			reject(`Error opening database: ${err}`);
 		};
 	});
 }

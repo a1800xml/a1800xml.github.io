@@ -11,70 +11,67 @@ import { clearObjectStore, DBUnload, searchFastDB, getValueDB, checkDB } from "/
 function displayResultList(DBName, results) {
 	/* get ResultsListTarget */
 	const resultsList = document.getElementById("result_list_target");
-	/* empty */
 	resultsList.innerHTML = "";
-	/* process each element */
 	const divList = [];
-	results[0].forEach(ele => {
+	results.forEach((ele) => {
 		// why Array of Array?!
 		/* feed list with items in GUID */
 		divList[ele.primaryKey] = document.createElement("div");
 		divList[ele.primaryKey].className = "result_list_row";
 
-		const [resDivGUID, resDivShort, resDivLnk] = ["div", "div", "div"].map(tag => document.createElement(tag));
+		const [resDivGUID, resDivShort, resDivLnk] = ["div", "div", "div"].map((tag) => document.createElement(tag));
 
 		resDivGUID.textContent = ele.primaryKey;
 		resDivShort.textContent = ele.value;
 		resDivLnk.className = "material-symbols-outlined btn";
 		resDivLnk.dataset.guid = ele.primaryKey;
 		resDivLnk.textContent = "arrow_outward";
-		[resDivGUID, resDivShort, resDivLnk].forEach(item => {
+		[resDivGUID, resDivShort, resDivLnk].forEach((item) => {
 			divList[ele.primaryKey].appendChild(item);
 		});
 	});
 	/* creating fragments instead of appending each child to reduce DOM reload */
 	const fragment = document.createDocumentFragment();
-	divList.forEach(ele => {
+	divList.forEach((ele) => {
 		fragment.appendChild(ele);
 	});
 	resultsList.appendChild(fragment);
 	/* console.log("indb", results); */
-	resultsList.addEventListener("click", function (event) {
-		// Check if the clicked element has the class 'btn'
-		if (event.target && event.target.classList.contains("btn")) {
-			const GUID = event.target.dataset.guid;
-			GUIDtoDisplay(DBName, GUID);
-		}
+	resultsList.addEventListener("click", (event) => {
+		const GUID = event.target.dataset.guid;
+		GUIDtoDisplay(DBName, GUID);
 	});
 }
 
 function displayRes(resArray) {
 	const dID = document.getElementById("details_values_DATA");
 	let dataHTML = "";
-	resArray["Data"].forEach(e => {
-		dataHTML += `<div>${e.map(ele => `<div>${ele}</div>`).join("")}</div>`;
+	resArray["Data"].forEach((e) => {
+		dataHTML += `<div>${e.map((ele) => `<div>${ele}</div>`).join("<div></div>")}</div>`;
 	});
 	dID.innerHTML = dataHTML;
-	const dIDX = document.getElementById("details_values_XML");
+	const dIDX = document.getElementById("detail_xml");
 	dIDX.innerHTML = resArray["XML"].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
-	document.querySelectorAll("[id=details_name_asset]").forEach(e => (e.innerHTML = resArray["Head"]["Name"]));
-	document.querySelectorAll("[id=details_name_template]").forEach(e => (e.innerHTML = resArray["Head"]["Template"]));
-	resArray["Head"]["Icon"]
-		? document.querySelectorAll("[id=details_icon]").forEach(e => {
-				e.src = "/icos/" + resArray["Head"]["Icon"];
-				e.style.display = "block";
-		  })
-		: document.querySelectorAll("[id=details_icon]").forEach(e => (e.style.display = "none"));
+	document.getElementById("details_name_asset").innerHTML = resArray["Head"]["Name"];
+	document.getElementById("details_name_template").innerHTML = resArray["Head"]["Template"];
+	if (resArray["Head"]["Icon"]) {
+		document.getElementById("details_icon").src = "/icos/" + resArray["Head"]["Icon"];
+		document.getElementById("details_icon").style.display = "block";
+	} else {
+		document.getElementById("details_icon").style.display = "none";
+	}
 }
 
 /**
  *
  * **/
 async function GUIDtoDisplay(DBName, GUID) {
+	console.error("guidtodisplkay", DBName, GUID);
 	const value = await getValueDB(DBName, GUID);
+	console.error("guidtodisplkay", value);
 	const wXML = new Worker("scripts/worker/wJ2S.js");
 	wXML.postMessage(value);
-	wXML.onmessage = e => {
+	wXML.onmessage = (e) => {
 		displayRes(e.data);
 	};
 }
@@ -89,13 +86,19 @@ function fetchStore(file, parentTag) {
 	wXML.postMessage({ filePath: "/xml/" + file, parentTag });
 	WorkerCount += 1;
 	WorkerStatus();
-	wXML.onmessage = e => {
-		console.log("new status", e);
+	wXML.onmessage = (e) => {
+		//console.log("new status", e);
+		checkDB(parentTag)
+			.then((dbVal) => {
+				const sKey = parentTag.replace(/[^a-zA-Z0-9\-]/g, "_");
+				document.getElementById("DBCount").dataset[sKey] = dbVal;
+			})
+			.catch((err) => {
+				console.error("Error checking DB:", err);
+			});
 		WorkerCount -= 1;
 		WorkerStatus();
 	};
-	const testDB = checkDB(parentTag);
-	console.log(testDB);
 }
 
 /**
@@ -109,8 +112,10 @@ function fetchStore(file, parentTag) {
 async function perfSearch({ searchString, searchTag, parentTag, nonstrict }) {
 	WorkerCount += 1;
 	WorkerStatus();
+	//console.log("db fetching");
 	/* console.error(searchString, searchTag, parentTag, nonstrict); */
 	let indDB = await searchFastDB(parentTag, searchString, nonstrict);
+	console.log("db fetch completed");
 	displayResultList(parentTag, indDB);
 	WorkerCount -= 1;
 	WorkerStatus();
@@ -118,7 +123,6 @@ async function perfSearch({ searchString, searchTag, parentTag, nonstrict }) {
 
 /* main entry for Search */
 window.addEventListener("DOMContentLoaded", function () {
-	/* var form = document.getElementById("search-form"); */
 	document.addEventListener(
 		"submit",
 		function (event) {
@@ -133,55 +137,48 @@ window.addEventListener("DOMContentLoaded", function () {
 		},
 		true
 	);
+	document.querySelector('select[name="searchFile"]').addEventListener("change", (event) => {
+		clearObjectStore("Text");
+		handleSelectionChange();
+		fetchStore(event.target.value, "Text");
+	});
+	document.getElementById("reload_db").addEventListener("click", () => {
+		console.log("reloadevent");
+		DBUnload();
+		window.location.reload();
+	});
+
+	checkFetch();
 });
 
-/**
- * delete all databases to clean up space after unloading the webpage e.g. closing
- * **/
-window.addEventListener("beforeunload", () => {
-	console.warn("Unloading webpage, to free up space, DB will be unloaded!");
-	DBUnload();
-});
-
-// Function to handle the initial setup
-function initialize() {
+function checkFetch() {
 	const fileIndex = [
-		{ name: "assets.xml.gz", parentTag: "Asset" }/*,
-		{ name: "datasets.xml.gz", parentTag: "DataSet" } ,
+		{ name: "assets.xml.gz", parentTag: "Asset" },
+		{ name: "datasets.xml.gz", parentTag: "DataSet" },
 		{ name: "templates.xml.gz", parentTag: "Template" },
 		{ name: "properties.xml.gz", parentTag: "Group[?(@.Name)]" },
-		{name : "properties-toolone.xml.gz", parentTag: "Property"}*/
+		{ name: "properties-toolone.xml.gz", parentTag: "Property" },
+		{ name: document.querySelector('select[name="searchFile"]').value, parentTag: "Text" },
 	];
-	fileIndex.forEach(ele => {
-		fetchStore(ele.name, ele.parentTag);
-	});
-
-	const selectElement = document.querySelector('select[name="searchFile"]');
-
-	// Set default value
-	const defaultValue = selectElement.value;
-	handleSelectionChange(defaultValue);
-
-	// Add event listener for changes
-	selectElement.addEventListener("change", event => {
-		clearObjectStore("Text");
-		handleSelectionChange(event.target.value);
+	fileIndex.forEach((ele) => {
+		checkDB(ele.parentTag).then((dbVal) => {
+			if (dbVal == 0) {
+				//console.warn("init of checkFetch", ele.parentTag);
+				fetchStore(ele.name, ele.parentTag);
+			} else {
+				//console.error("DBCount = ", ele.parentTag, dbVal);
+				const sKey = ele.parentTag.replace(/[^a-zA-Z0-9\-]/g, "_").toLowerCase();
+				document.getElementById("DBCount").dataset[sKey] = dbVal;
+			}
+		});
 	});
 }
-
-// Function to handle selection changes
-function handleSelectionChange(value) {
-	console.log("Selected file:", value);
-	fetchStore(value, "Text");
-}
-
-// Run initialization when the DOM is fully loaded
-window.addEventListener("DOMContentLoaded", initialize);
 
 /**
  * Function to update the visibility of an element based on the WorkerCount
  */
 let WorkerCount = 0;
+
 function WorkerStatus() {
 	const statusElement = document.getElementById("loader_div"); // The element to toggle
 
@@ -191,3 +188,25 @@ function WorkerStatus() {
 		statusElement.style.display = "none"; // Hide element
 	}
 }
+
+const targetNode = document.getElementById("DBCount");
+const config = { attributes: true, childList: false, subtree: false };
+
+// Callback function to execute when mutations are observed
+const callback = function (mutationsList) {
+	for (let mutation of mutationsList) {
+		if (
+			mutation.type === "attributes" &&
+			mutation.attributeName === "data-" + document.getElementsByClassName("search_tab active_search_tab")[0].dataset["parenttag"]
+		) {
+			const newValue = targetNode.getAttribute("data-" + document.getElementsByClassName("search_tab active_search_tab")[0].dataset["parenttag"]);
+			targetNode.innerHTML = newValue;
+		}
+	}
+};
+
+// Create an observer instance linked to the callback function
+const observer = new MutationObserver(callback);
+
+// Start observing the target node for configured mutations
+observer.observe(targetNode, config);
