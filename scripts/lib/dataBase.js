@@ -233,16 +233,11 @@ async function clearObjectStore(storeName) {
 function getValueDB(DBName, SearchValue) {
 	return new Promise((resolve, reject) => {
 		const request = indexedDB.open(dbName, dbVersion);
-		console.log("valuedb here");
 		request.onsuccess = () => {
 			const _db = request.result;
-			console.log("valuedb here2");
 			const transaction = _db.transaction(DBName, "readonly");
-			console.log("valuedb here3");
 			const objectStore = transaction.objectStore(DBName);
-			console.log("valuedb here4");
 			const getRequest = objectStore.get(Number(SearchValue));
-			console.log("valuedb here5");
 			getRequest.onsuccess = () => {
 				const value = getRequest.result;
 				resolve(value);

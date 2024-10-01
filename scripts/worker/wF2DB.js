@@ -1,6 +1,7 @@
 importScripts("https://cdn.jsdelivr.net/npm/pako@2.0.4/dist/pako.min.js");
 importScripts("/scripts/lib/fxp/fxp.min.js"); // v4.4
-importScripts("/scripts/lib/jspath/jsonpath.min.js"); // v1.1.1
+//importScripts("/scripts/lib/jspath/jsonpath.min.js"); // v1.1.1
+importScripts("/scripts/lib/jspath/index-browser-umd.min.js"); //v9.0.0
 
 /**
  * Constants
@@ -12,6 +13,8 @@ const parserOptions = {
 	ignoreAttributes: true,
 	processEntities: false, // default: true
 	ignoreDeclaration: true,
+	ignoreNameSpace: true,
+	trimValues: false,
 };
 
 const parser = new fxp.XMLParser(parserOptions);
@@ -31,7 +34,7 @@ onmessage = async (event) => {
 
 		// Parse the decompressed data and query with JSONPath
 		const parsedXML = parser.parse(decompressedData);
-		const result = jsonpath.query(parsedXML, `$..${parentTag}`);
+		const result = JSONPath.JSONPath({ path: `$..${parentTag}`, json: parsedXML });
 
 		// Store the results in IndexedDB
 		indexedDB.open(DB_NAME, DB_VERSION).onsuccess = async (event) => {

@@ -51,7 +51,10 @@ function displayRes(resArray) {
 	});
 	dID.innerHTML = dataHTML;
 	const dIDX = document.getElementById("detail_xml");
-	dIDX.innerHTML = resArray["XML"].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>");
+	dIDX.innerHTML = resArray["XML"].replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/\n/g, "<br>").replace(/&gt;(.*?)&lt;/g, (match, p1) => {
+		return `&gt;<span style="color:pink;">${p1}</span>&lt;`;
+	});
+	
 	document.getElementById("details_name_asset").innerHTML = resArray["Head"]["Name"];
 	document.getElementById("details_name_template").innerHTML = resArray["Head"]["Template"];
 	if (resArray["Head"]["Icon"]) {

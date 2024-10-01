@@ -50,7 +50,7 @@ function displayXML(Data) {
 		ignoreAttributes: false,
 		format: true,
 		suppressEmptyNode: true,
-		indentBy: "   "
+		/* indentBy: "   " */
 	};
 	const xBuilder = new fxp.XMLBuilder(bOptions);
 	const string = xBuilder.build(Data);
